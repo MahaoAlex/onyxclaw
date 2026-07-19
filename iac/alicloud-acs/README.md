@@ -35,7 +35,8 @@ git push origin v0.1.0
 首次发布后检查 GHCR Package 可见性。ACS 直接拉取时，Package 必须为 Public；否则需
 给 SandboxSet 配置 GHCR image pull secret，或将 Release 镜像镜像到同地域 Alibaba
 Cloud Container Registry（ACR）。当前第一轮采用 Public GHCR，避免在 Sandbox 中分发
-GitHub Personal Access Token（PAT，个人访问令牌）。
+GitHub Personal Access Token（PAT，个人访问令牌）。`v0.1.0` 已通过匿名 Registry
+manifest 请求验证为可拉取。
 
 正式验证必须从 Release 的 `image-reference.txt` 复制 digest 固定 URI：
 

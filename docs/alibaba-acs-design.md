@@ -99,9 +99,11 @@ registry manifest、镜像 digest 和 SHA-256 校验文件。ACS 配置必须使
 `image@sha256:...`，Release archive 只用于离线审计、恢复或镜像到其他 Registry。
 
 GHCR Package 首次创建默认为私有，不能假设公开 GitHub 仓库会使它自动可匿名拉取。
-第一轮云验证在首次发布后把该 Package 设为 Public；若不能公开，则改为镜像到同地域
+第一轮云验证要求该 Package 为 Public；若不能公开，则改为镜像到同地域
 Alibaba Cloud Container Registry（ACR）或显式配置 `imagePullSecret`。ACS 中安装的
 `managed-aliyun-acr-credential-helper` 只解决阿里云 ACR 鉴权，不解决私有 GHCR 鉴权。
+当前 `v0.1.0` 已发布成功，匿名访问 GHCR manifest 返回 HTTP 200；其 OCI archive、
+manifest、镜像引用和校验文件均已归档到同名 GitHub Release。
 
 ## 3. 资源拓扑
 
@@ -251,19 +253,16 @@ Secret 单独注入：Sandbox Team API Key、模型 API Key、Channel signing se
 
 ## 8. 已知边界与下一步
 
-本机已安装 OpenTofu 1.12.4 与 kubectl 1.32.0；阿里云凭据和账号授权检查已通过，真实
-`plan` 结果为 `7 add, 0 change, 0 destroy`，尚未执行产生费用的 `apply`。由于当前
-macOS 工具链不能运行 Colima/QEMU，本地 Docker 构建已由 GitHub Actions Release 流程
-替代。下一步顺序：
+本机已安装 OpenTofu 1.12.4 与 kubectl 1.32.0；阿里云凭据和账号授权检查已通过。首个
+`v0.1.0` GitHub Actions 发布成功，GHCR 匿名拉取检查通过，本机私有配置也已切换到该
+Release 的 digest。切换后真实 `plan` 仍为 `7 add, 0 change, 0 destroy`，尚未执行产生
+费用的 `apply`。由于当前 macOS 工具链不能运行 Colima/QEMU，本地 Docker 构建已由
+GitHub Actions Release 流程替代。下一步顺序：
 
-1. 提交并推送 Release 工作流及 IaC；
-2. 推送首个 `vX.Y.Z` tag，确认 GHCR 镜像、digest、OCI archive 和 Release 均生成；
-3. 将 GHCR Package 设为 Public，并从匿名环境按 digest 验证拉取；
-4. 把 `.env.alicloud.local` 的 `ONYXCLAW_OPENCLAW_IMAGE` 更新为 Release digest；
-5. 再执行一次 `plan`，人工审阅资源和费用；
-6. `deploy` 后完成基础设施验收；
-7. 实现 Alibaba ACS E2B Adapter 和 bootstrap Saga；
-8. 通过云端 Full E2E 后立即执行 `destroy` 验证无遗留。
+1. 人工确认计划资源与费用后执行 `deploy`；
+2. 验证 ACS 集群、三个 Sandbox 组件和 `SandboxSet` 预热池；
+3. 实现 Alibaba ACS E2B Adapter 和 bootstrap Saga；
+4. 通过云端 Full E2E 后立即执行 `destroy` 验证无遗留。
 
 ## 9. 参考资料
 

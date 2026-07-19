@@ -79,6 +79,10 @@ The derived image is released by pushing a SemVer tag such as `v0.1.0`. The
 the corresponding GitHub Release. Configure ACS with the `image@sha256:...`
 value from that Release, not with a floating tag.
 
+Current published version: [v0.1.0](https://github.com/MahaoAlex/onyxclaw/releases/tag/v0.1.0).
+Its GHCR manifest has been verified through an anonymous request, and the
+Alibaba Cloud plan succeeds with the Release digest reference.
+
 ## Design
 
 - [Initial requirements](./docs/init.md)
