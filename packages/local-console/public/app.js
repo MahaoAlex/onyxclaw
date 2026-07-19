@@ -1,4 +1,5 @@
 import { resolveLandingView } from "./ui-state.js";
+import { architectureStateFor, formatDuration } from "./observability-ui.js";
 
 const elements = {
   status: document.querySelector("#global-status"),
@@ -23,6 +24,10 @@ const elements = {
   chatInput: document.querySelector("#chat-input"),
   send: document.querySelector(".send-button"),
   chatStop: document.querySelector("#chat-stop"),
+  resourceGrid: document.querySelector("#resource-grid"),
+  apiCallList: document.querySelector("#api-call-list"),
+  pollStatus: document.querySelector("#poll-status"),
+  activeOperation: document.querySelector("#active-operation"),
 };
 let helloShown = false;
 let helloLoading = false;
@@ -50,9 +55,9 @@ function notice(element, message, error = false) {
 function renderStatus(status) {
   const labels = {
     idle: "尚未连接",
-    starting: "正在启动本机 OpenClaw…",
+    starting: "正在启动 OpenClaw…",
     allocated: "云端 Sandbox 已创建，等待确认性格",
-    connected: "本机 OpenClaw 已连接",
+    connected: "OpenClaw 已连接",
     error: "连接异常",
   };
   elements.status.className = `status-pill ${status.mode}`;
@@ -74,6 +79,117 @@ function renderStatus(status) {
   elements.chatState.textContent = chatReady ? "已连接 · 可以发送" : "等待完成设置";
   showStep(landing.visibleStep, status);
   if (status.error) notice(elements.modeNotice, status.error, true);
+}
+
+function renderObjects(objects) {
+  elements.resourceGrid.replaceChildren();
+  if (!objects.length) {
+    const empty = document.createElement("div");
+    empty.className = "resource-card";
+    const header = document.createElement("header");
+    const label = document.createElement("b");
+    label.textContent = "NO OBJECTS";
+    header.append(label);
+    const detail = document.createElement("p");
+    detail.textContent = "等待 Sandbox Service 调用";
+    empty.append(header, detail);
+    elements.resourceGrid.append(empty);
+    return;
+  }
+  for (const object of objects.slice(0, 6)) {
+    const card = document.createElement("article");
+    card.className = `resource-card ${object.state}`;
+    const header = document.createElement("header");
+    const label = document.createElement("b");
+    label.textContent = object.type;
+    const dot = document.createElement("i");
+    header.append(label, dot);
+    const id = document.createElement("p");
+    id.textContent = object.id;
+    id.title = object.id;
+    const state = document.createElement("small");
+    state.textContent = object.state;
+    card.append(header, id, state);
+    elements.resourceGrid.append(card);
+  }
+}
+
+function renderCalls(calls) {
+  elements.apiCallList.replaceChildren();
+  if (!calls.length) {
+    const empty = document.createElement("div");
+    empty.className = "empty-activity";
+    const glyph = document.createElement("span");
+    glyph.textContent = "⌁";
+    const copy = document.createElement("p");
+    copy.textContent = "尚未调用 Sandbox Service API。";
+    empty.append(glyph, copy);
+    elements.apiCallList.append(empty);
+    return;
+  }
+  for (const call of calls) {
+    const row = document.createElement("article");
+    row.className = "api-row";
+    const name = document.createElement("div");
+    name.className = "api-name";
+    const apiName = document.createElement("b");
+    apiName.textContent = call.api;
+    const object = document.createElement("small");
+    object.textContent = call.object
+      ? `${call.object.type} · ${call.object.id}`
+      : "等待后端对象";
+    name.append(apiName, object);
+    const target = document.createElement("span");
+    target.className = "api-target";
+    target.textContent = call.target;
+    const state = document.createElement("span");
+    state.className = `api-status ${call.state}`;
+    state.textContent = call.state;
+    const duration = document.createElement("span");
+    duration.className = "api-duration";
+    duration.textContent = formatDuration(call.durationMs);
+    row.append(name, target, state, duration);
+    elements.apiCallList.append(row);
+  }
+}
+
+function renderArchitecture(calls, objects) {
+  const architecture = architectureStateFor(calls);
+  document.querySelectorAll("[data-edge]").forEach((edge) => {
+    edge.classList.toggle("active", architecture.edges.includes(edge.dataset.edge));
+    edge.classList.toggle("recent", !architecture.activeApi && calls.length > 0 &&
+      ["app-bff", "bff-e2b", "e2b-sandbox"].includes(edge.dataset.edge));
+  });
+  document.querySelectorAll("[data-node]").forEach((node) => {
+    node.classList.toggle("active", architecture.nodes.includes(node.dataset.node));
+    node.classList.remove("healthy", "error");
+  });
+  const sandboxObject = objects.find((object) => object.type === "Sandbox");
+  if (sandboxObject?.state === "running") {
+    document.querySelector('[data-node="sandbox"]')?.classList.add("healthy");
+  } else if (sandboxObject?.state === "failed") {
+    document.querySelector('[data-node="sandbox"]')?.classList.add("error");
+  }
+  const active = calls.find((call) => call.state === "running");
+  elements.activeOperation.textContent = active
+    ? `${active.api} · ${formatDuration(active.durationMs)}`
+    : calls[0]
+      ? `${calls[0].api} · ${calls[0].state}`
+      : "等待 Sandbox Service 调用";
+}
+
+async function refreshObservability() {
+  try {
+    const observation = await api("/api/observability");
+    renderObjects(observation.objects);
+    renderCalls(observation.calls);
+    renderArchitecture(observation.calls, observation.objects);
+    elements.pollStatus.textContent = "LIVE";
+    elements.pollStatus.className = "poll-status ready";
+  } catch {
+    elements.pollStatus.textContent = "OFFLINE";
+    elements.pollStatus.className = "poll-status error";
+  }
 }
 
 function showStep(step, status = {}) {
@@ -148,7 +264,7 @@ async function ensureHello() {
 }
 
 elements.start.addEventListener("click", async () => {
-  notice(elements.modeNotice, "正在检查 Plugin 并重启 Gateway，请稍候…");
+  notice(elements.modeNotice, "正在调用后端服务并准备 OpenClaw，请稍候…");
   const current = await api("/api/status");
   initialLanding = false;
   if (current.mode === "connected") elements.start.disabled = true;
@@ -168,7 +284,7 @@ elements.stop.addEventListener("click", async () => {
   notice(elements.modeNotice, "正在禁用测试 Channel 并清理连接…");
   try {
     renderStatus(await api("/api/lobster/stop", { method: "POST" }));
-    notice(elements.modeNotice, "连接已清理，本机 OpenClaw 保持运行。");
+    notice(elements.modeNotice, "连接与测试资源已清理。");
   } catch (error) {
     notice(elements.modeNotice, error.message, true);
   }
@@ -238,7 +354,7 @@ elements.chatStop.addEventListener("click", async () => {
   elements.chatStop.disabled = true;
   try {
     renderStatus(await api("/api/lobster/stop", { method: "POST" }));
-    notice(elements.modeNotice, "连接已清理，本机 OpenClaw 保持运行。");
+    notice(elements.modeNotice, "连接与测试资源已清理。");
   } catch (error) {
     addMessage("assistant", `清理失败：${error.message}`, "系统");
   } finally {
@@ -246,4 +362,5 @@ elements.chatStop.addEventListener("click", async () => {
   }
 });
 
-await Promise.all([refreshStatus(), loadSoul()]);
+await Promise.all([refreshStatus(), loadSoul(), refreshObservability()]);
+setInterval(() => void refreshObservability(), 750);

@@ -6,6 +6,7 @@ import {
   CloudRuntimeError,
   createAlibabaAcsAdapter,
 } from "../src/alibaba-acs-adapter.js";
+import { createSandboxServiceMonitor } from "../../local-console/src/observability.js";
 
 function provider() {
   return {
@@ -157,6 +158,47 @@ test("wraps provider failures with a stage and redacts secrets", async () => {
     assert.match(error.message, /\[REDACTED\]/);
     return true;
   });
+});
+
+test("records real E2B SDK timings and backend objects without commands or file content", async () => {
+  let now = 100;
+  const operationMonitor = createSandboxServiceMonitor({ now: () => now });
+  const { clientFactory } = fixture();
+  const adapter = new AlibabaAcsAdapter({
+    provider: provider(),
+    secrets: { apiKey: "runtime-secret" },
+    clientFactory,
+    operationMonitor,
+  });
+
+  const { sandboxId } = await adapter.createSandbox();
+  now += 11;
+  await adapter.writeFile(sandboxId, "/home/node/test.txt", "private file content");
+  now += 12;
+  await adapter.readFile(sandboxId, "/home/node/test.txt");
+  now += 13;
+  await adapter.runCommand(sandboxId, "private command");
+  now += 14;
+  await adapter.killSandbox(sandboxId);
+
+  const snapshot = operationMonitor.snapshot();
+  assert.deepEqual(snapshot.calls.map((call) => call.api), [
+    "Sandbox.kill",
+    "Commands.run",
+    "Files.read",
+    "Files.write",
+    "Sandbox.create",
+  ]);
+  assert.deepEqual(snapshot.calls.map((call) => call.object.type), [
+    "Sandbox",
+    "Process",
+    "File",
+    "File",
+    "Sandbox",
+  ]);
+  assert.equal(snapshot.calls[0].object.state, "terminated");
+  assert.equal(snapshot.calls[1].object.state, "exited:0");
+  assert.doesNotMatch(JSON.stringify(snapshot), /private command|private file content|runtime-secret/);
 });
 
 test("builds the adapter from the shared provider registry", async () => {

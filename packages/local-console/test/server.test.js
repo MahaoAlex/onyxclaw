@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
+import { createSandboxServiceMonitor } from "../src/observability.js";
 import { createLocalConsoleServer } from "../src/server.js";
 
 function createController() {
@@ -117,7 +118,53 @@ test("mutating API rejects requests without the local UI header", async (t) => {
   assert.equal(response.status, 403);
 });
 
-test("web UI exposes the three local OpenClaw tabs without Sandbox controls", async (t) => {
+test("observability API reports only injected Sandbox Service calls and objects", async (t) => {
+  const monitor = createSandboxServiceMonitor();
+  const call = monitor.begin({ api: "Sandbox.create", target: "Sandbox Manager" });
+  monitor.succeed(call, {
+    object: { type: "Sandbox", id: "sandbox-1", state: "running" },
+  });
+  const app = createLocalConsoleServer({
+    controller: createController(),
+    operationMonitor: monitor,
+    host: "127.0.0.1",
+    port: 0,
+  });
+  await app.start();
+  t.after(() => app.stop({ cleanup: false }));
+
+  await fetch(`${app.url}/api/status`);
+  const observation = await fetch(`${app.url}/api/observability`).then((response) => response.json());
+
+  assert.equal(observation.calls[0].api, "Sandbox.create");
+  assert.equal(observation.calls[0].state, "succeeded");
+  assert.equal(observation.objects[0].id, "sandbox-1");
+  assert.doesNotMatch(JSON.stringify(observation), /x-onyxclaw-request|content-type/);
+});
+
+test("ordinary BFF and OpenClaw calls do not enter Sandbox Service telemetry", async (t) => {
+  const app = createLocalConsoleServer({
+    controller: createController(),
+    host: "127.0.0.1",
+    port: 0,
+  });
+  await app.start();
+  t.after(() => app.stop({ cleanup: false }));
+
+  await fetch(`${app.url}/api/chat`, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "x-onyxclaw-request": "local-ui",
+    },
+    body: JSON.stringify({ text: "not measured" }),
+  });
+  const observation = await fetch(`${app.url}/api/observability`).then((response) => response.json());
+  assert.deepEqual(observation.calls, []);
+  assert.deepEqual(observation.objects, []);
+});
+
+test("web UI exposes a phone workflow plus architecture and API observability", async (t) => {
   const app = createLocalConsoleServer({
     controller: createController(),
     host: "127.0.0.1",
@@ -135,7 +182,12 @@ test("web UI exposes the three local OpenClaw tabs without Sandbox controls", as
   assert.match(html, /和龙虾对话/);
   assert.match(html, /确认性格并继续/);
   assert.match(html, /data-step="soul"/);
-  assert.match(html, /本机 OpenClaw/);
+  assert.match(html, /class="phone-frame"/);
+  assert.match(html, /SYSTEM ARCHITECTURE/);
+  assert.match(html, /API ACTIVITY/);
+  assert.match(html, /id="architecture-map"/);
+  assert.match(html, /id="api-call-list"/);
+  assert.match(html, /id="resource-grid"/);
   assert.doesNotMatch(html, /创建 Sandbox/);
   assert.match(html, /src="\/app\.js"/);
 });

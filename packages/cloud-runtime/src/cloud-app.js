@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 
 import { loadProviderRegistry } from "../../cloud-config/src/provider-registry.js";
 import { createLocalConsoleServer } from "../../local-console/src/server.js";
+import { createSandboxServiceMonitor } from "../../local-console/src/observability.js";
 import { WsPlatformSimulator } from "../../test-orchestrator/src/ws-simulator.js";
 import {
   createAlibabaAcsAdapter,
@@ -26,9 +27,11 @@ const baseConfig = JSON.parse(baseConfigSource);
 const registry = await loadProviderRegistry({ configPath: providerConfigPath });
 const provider = registry.getProvider("alicloud-acs");
 const secrets = registry.getSecrets("alicloud-acs");
+const operationMonitor = createSandboxServiceMonitor();
 const adapter = createAlibabaAcsAdapter({
   registry,
   clientFactory: createPythonE2BClientFactory(),
+  operationMonitor,
 });
 const simulator = new WsPlatformSimulator({
   host: process.env.CHANNEL_HOST ?? "0.0.0.0",
@@ -59,6 +62,7 @@ const controller = new CloudConsoleController({
 });
 const app = createLocalConsoleServer({
   controller,
+  operationMonitor,
   host: process.env.APP_HOST ?? "0.0.0.0",
   port: Number(process.env.APP_PORT ?? "3000"),
 });

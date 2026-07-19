@@ -30,8 +30,9 @@ export class AlibabaAcsAdapter {
   #secrets;
   #client;
   #sessions = new Map();
+  #operationMonitor;
 
-  constructor({ provider, secrets, clientFactory }) {
+  constructor({ provider, secrets, clientFactory, operationMonitor }) {
     if (typeof clientFactory !== "function") throw new TypeError("clientFactory is required");
     requiredString(provider?.api?.baseUrl, "provider.api.baseUrl");
     requiredString(provider?.sandbox?.templateId, "provider.sandbox.templateId");
@@ -42,6 +43,7 @@ export class AlibabaAcsAdapter {
     }
     this.#provider = provider;
     this.#secrets = secrets;
+    this.#operationMonitor = operationMonitor;
     this.#client = clientFactory({
       apiKey: secrets.apiKey,
       baseUrl: provider.api.baseUrl,
@@ -49,10 +51,24 @@ export class AlibabaAcsAdapter {
     });
   }
 
-  async #perform(stage, operation) {
+  async #perform(stage, telemetry, operation) {
+    const callId = this.#operationMonitor?.begin({
+      api: telemetry.api,
+      target: telemetry.target,
+      object: telemetry.object,
+    });
     try {
-      return await operation();
+      const result = await operation();
+      this.#operationMonitor?.succeed(callId, {
+        object: telemetry.resultObject?.(result) ?? telemetry.object,
+      });
+      return result;
     } catch (error) {
+      this.#operationMonitor?.fail(callId, {
+        object: telemetry.failureObject ?? (telemetry.object
+          ? { ...telemetry.object, state: "failed" }
+          : undefined),
+      });
       if (error instanceof CloudRuntimeError) throw error;
       throw new CloudRuntimeError(stage, error, this.#secrets);
     }
@@ -65,7 +81,15 @@ export class AlibabaAcsAdapter {
   }
 
   async createSandbox({ metadata, envs } = {}) {
-    return this.#perform("create", async () => {
+    return this.#perform("create", {
+      api: "Sandbox.create",
+      target: "Alibaba ACS Sandbox Manager",
+      resultObject: (result) => ({
+        type: "Sandbox",
+        id: result.sandboxId,
+        state: "running",
+      }),
+    }, async () => {
       const session = await this.#client.create({
         template: this.#provider.sandbox.templateId,
         timeoutSeconds: Math.ceil(this.#provider.sandbox.timeoutMs / 1000),
@@ -79,7 +103,12 @@ export class AlibabaAcsAdapter {
 
   async connectSandbox(sandboxId) {
     const id = requiredString(sandboxId, "sandboxId");
-    return this.#perform("connect", async () => {
+    return this.#perform("connect", {
+      api: "Sandbox.connect",
+      target: "Alibaba ACS Sandbox Manager",
+      object: { type: "Sandbox", id, state: "connecting" },
+      resultObject: (result) => ({ type: "Sandbox", id: result.sandboxId, state: "running" }),
+    }, async () => {
       const session = await this.#client.connect(id);
       return this.#remember(session, id);
     });
@@ -93,7 +122,17 @@ export class AlibabaAcsAdapter {
 
   async runCommand(sandboxId, command) {
     requiredString(command, "command");
-    return this.#perform("command", async () => {
+    const id = requiredString(sandboxId, "sandboxId");
+    return this.#perform("command", {
+      api: "Commands.run",
+      target: "Sandbox envd",
+      object: { type: "Process", id, state: "running" },
+      resultObject: (result) => ({
+        type: "Process",
+        id,
+        state: `exited:${result.exitCode}`,
+      }),
+    }, async () => {
       const session = await this.#getSession(sandboxId);
       return session.runCommand(command, { user: this.#provider.sandbox.defaultUser });
     });
@@ -104,7 +143,12 @@ export class AlibabaAcsAdapter {
     if (typeof content !== "string" && !Buffer.isBuffer(content)) {
       throw new TypeError("content must be a string or Buffer");
     }
-    return this.#perform("file-write", async () => {
+    return this.#perform("file-write", {
+      api: "Files.write",
+      target: "Sandbox envd",
+      object: { type: "File", id: filePath, state: "writing" },
+      resultObject: () => ({ type: "File", id: filePath, state: "written" }),
+    }, async () => {
       const session = await this.#getSession(sandboxId);
       return session.writeFile(filePath, content, {
         user: this.#provider.sandbox.defaultUser,
@@ -114,7 +158,12 @@ export class AlibabaAcsAdapter {
 
   async readFile(sandboxId, filePath) {
     if (!path.posix.isAbsolute(filePath)) throw new TypeError("filePath must be absolute");
-    return this.#perform("file-read", async () => {
+    return this.#perform("file-read", {
+      api: "Files.read",
+      target: "Sandbox envd",
+      object: { type: "File", id: filePath, state: "reading" },
+      resultObject: () => ({ type: "File", id: filePath, state: "read" }),
+    }, async () => {
       const session = await this.#getSession(sandboxId);
       return session.readFile(filePath, { user: this.#provider.sandbox.defaultUser });
     });
@@ -122,7 +171,12 @@ export class AlibabaAcsAdapter {
 
   async killSandbox(sandboxId) {
     const id = requiredString(sandboxId, "sandboxId");
-    return this.#perform("kill", async () => {
+    return this.#perform("kill", {
+      api: "Sandbox.kill",
+      target: "Alibaba ACS Sandbox Manager",
+      object: { type: "Sandbox", id, state: "terminating" },
+      resultObject: () => ({ type: "Sandbox", id, state: "terminated" }),
+    }, async () => {
       const session = await this.#getSession(id);
       try {
         await session.kill();
@@ -142,10 +196,12 @@ export function createAlibabaAcsAdapter({
   registry,
   providerId = "alicloud-acs",
   clientFactory,
+  operationMonitor,
 }) {
   return new AlibabaAcsAdapter({
     provider: registry.getProvider(providerId),
     secrets: registry.getSecrets(providerId),
     clientFactory,
+    operationMonitor,
   });
 }

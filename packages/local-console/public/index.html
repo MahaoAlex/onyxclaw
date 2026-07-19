@@ -3,152 +3,160 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="color-scheme" content="light" />
-    <title>OnyxClaw 本机控制台</title>
+    <meta name="color-scheme" content="dark" />
+    <title>OnyxClaw Cloud Lab</title>
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
-    <div class="ambient ambient-one"></div>
-    <div class="ambient ambient-two"></div>
-    <main class="shell">
-      <header class="topbar">
+    <main class="workspace-shell">
+      <header class="console-header">
         <div class="brand">
-          <div class="brand-mark" aria-hidden="true">◈</div>
+          <div class="brand-mark" aria-hidden="true">O</div>
           <div>
-            <div class="brand-name">ONYXCLAW</div>
-            <div class="brand-subtitle">本机 OpenClaw 控制台</div>
+            <strong>ONYXCLAW</strong>
+            <span>Sandbox Experience Lab</span>
           </div>
         </div>
-        <div class="status-pill" id="global-status">
-          <span class="status-dot"></span>
-          <span id="global-status-text">尚未连接</span>
-        </div>
+        <div class="environment-chip"><i></i> LIVE TEST ENVIRONMENT</div>
       </header>
 
-      <section class="hero">
-        <div>
-          <p class="eyebrow">LOCAL PHASE 1</p>
-          <h1>让你的本机 OpenClaw<br /><span>进入龙虾模式。</span></h1>
-          <p class="hero-copy">
-            在一个安静的控制台里完成 Channel 连接、性格设定和实时对话。
-            所有操作只作用于这台 Mac 上已经安装的 OpenClaw。
-          </p>
-        </div>
-        <div class="hero-orbit" aria-hidden="true">
-          <div class="orbit-ring"></div>
-          <div class="lobster-glyph">⌁</div>
-          <div class="orbit-label">LOCAL<br />ONLY</div>
-        </div>
-      </section>
+      <section class="workbench">
+        <section class="customer-stage" aria-label="客户手机 APP 模拟器">
+          <div class="section-label">
+            <span>01</span>
+            <div><b>CUSTOMER APP</b><small>Mobile client simulation</small></div>
+          </div>
 
-      <nav class="tabs" aria-label="新用户设置步骤">
-        <button class="tab active" data-step="mode" disabled>
-          <span>01</span> 龙虾模式
-        </button>
-        <button class="tab" data-step="soul" disabled>
-          <span>02</span> 性格设定
-        </button>
-        <button class="tab" data-step="chat" disabled>
-          <span>03</span> 和龙虾对话
-        </button>
-      </nav>
+          <div class="phone-frame">
+            <div class="phone-hardware"><span></span></div>
+            <div class="phone-screen">
+              <div class="phone-statusbar" aria-hidden="true">
+                <span>9:41</span><span>● ◒ ▰</span>
+              </div>
+              <header class="app-header">
+                <div class="app-brand"><i>O</i><span>OnyxClaw</span></div>
+                <div class="status-pill" id="global-status">
+                  <span class="status-dot"></span>
+                  <span id="global-status-text">尚未连接</span>
+                </div>
+              </header>
 
-      <section class="panel active" id="panel-mode">
-        <div class="panel-grid">
-          <article class="card primary-card">
-            <p class="card-kicker">CONNECTION</p>
-            <h2>连接本机 OpenClaw</h2>
-            <p class="muted">
-              控制台将检查 Plugin、启动本地 Channel Simulator、配置 Channel，
-              并重启 Gateway 完成连接。首次启动通常需要约 40 秒。
-            </p>
-            <div class="mode-actions">
-              <button class="button button-primary" id="start-mode">
-                <span class="button-icon">↗</span> 进入龙虾模式
-              </button>
-              <button class="button button-quiet" id="stop-mode" disabled>
-                断开并清理
-              </button>
+              <nav class="tabs" aria-label="新用户设置步骤">
+                <button class="tab active" data-step="mode" disabled><b>1</b><span>龙虾模式</span></button>
+                <button class="tab" data-step="soul" disabled><b>2</b><span>性格设定</span></button>
+                <button class="tab" data-step="chat" disabled><b>3</b><span>对话</span></button>
+              </nav>
+
+              <div class="app-content">
+                <section class="panel active" id="panel-mode">
+                  <div class="lobster-hero">
+                    <div class="lobster-orbit" aria-hidden="true"><span>⌁</span></div>
+                    <p>OPENCLAW COMPANION</p>
+                    <h1>进入<br /><em>龙虾模式</em></h1>
+                    <p class="mobile-copy">连接你的 OpenClaw，创建一只拥有专属性格的智能龙虾。</p>
+                  </div>
+                  <div class="mode-actions">
+                    <button class="button button-primary" id="start-mode">进入龙虾模式 <span>→</span></button>
+                    <button class="button button-quiet" id="stop-mode" disabled>断开并清理</button>
+                  </div>
+                  <div class="notice" id="mode-notice" hidden></div>
+                  <dl class="mini-metrics">
+                    <div><dt>MODE</dt><dd id="metric-mode">IDLE</dd></div>
+                    <div><dt>INSTANCE</dt><dd id="metric-instance">local-mac</dd></div>
+                    <div><dt>GATEWAY</dt><dd id="metric-gateway">待检查</dd></div>
+                    <div><dt>CONNECTION</dt><dd id="metric-connection">—</dd></div>
+                  </dl>
+                </section>
+
+                <section class="panel" id="panel-soul">
+                  <div class="mobile-panel-head">
+                    <div><p>STEP 02 · SOUL.md</p><h2>塑造龙虾性格</h2></div>
+                    <button class="icon-button" id="reload-soul" aria-label="重新读取">↻</button>
+                  </div>
+                  <p class="mobile-copy">编辑性格文件，确认后才能进入对话。</p>
+                  <textarea id="soul-editor" spellcheck="false" placeholder="正在读取 SOUL.md…"></textarea>
+                  <div class="file-meta"><span id="soul-size">— bytes</span><span id="soul-hash">SHA-256 —</span></div>
+                  <div class="editor-actions">
+                    <button class="button button-quiet" id="restore-soul">恢复版本</button>
+                    <button class="button button-primary" id="confirm-soul">确认性格并继续</button>
+                  </div>
+                  <div class="notice" id="soul-notice" hidden></div>
+                </section>
+
+                <section class="panel chat-panel" id="panel-chat">
+                  <div class="mobile-panel-head chat-head">
+                    <div><p>STEP 03 · CHANNEL</p><h2>和龙虾对话</h2></div>
+                    <button class="icon-button" id="chat-stop" aria-label="断开并清理">×</button>
+                  </div>
+                  <span class="chat-state" id="chat-state">等待连接</span>
+                  <div class="messages" id="messages">
+                    <div class="empty-chat"><div>⌁</div><p>龙虾准备好后会先向你问好。</p></div>
+                  </div>
+                  <form class="composer" id="chat-form">
+                    <textarea id="chat-input" rows="1" placeholder="输入消息…" disabled></textarea>
+                    <button class="send-button" type="submit" disabled aria-label="发送消息">↑</button>
+                  </form>
+                </section>
+              </div>
+              <div class="home-indicator" aria-hidden="true"></div>
             </div>
-            <div class="notice" id="mode-notice" hidden></div>
+          </div>
+        </section>
+
+        <section class="service-workbench" aria-label="后端服务可观测工作台">
+          <article class="console-card architecture-card">
+            <header class="card-header">
+              <div class="section-label compact-label">
+                <span>02</span><div><b>SYSTEM ARCHITECTURE</b><small>Live request topology</small></div>
+              </div>
+              <div class="live-badge"><i></i> LIVE</div>
+            </header>
+
+            <svg id="architecture-map" class="architecture-map" viewBox="0 0 900 360" role="img" aria-labelledby="architecture-title">
+              <title id="architecture-title">OnyxClaw APP 到 ACS Sandbox 和 MiniMax 的系统架构</title>
+              <defs>
+                <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" /></marker>
+                <filter id="node-glow"><feGaussianBlur stdDeviation="4" result="blur" /><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+              </defs>
+              <g class="architecture-edges">
+                <path data-edge="app-bff" d="M170 180 H250" />
+                <path data-edge="bff-e2b" d="M380 165 C420 130 430 105 475 94" />
+                <path data-edge="e2b-sandbox" d="M605 90 H690" />
+                <path data-edge="bff-openclaw" d="M380 195 C420 235 430 262 475 270" />
+                <path data-edge="sandbox-openclaw" d="M755 130 C750 210 680 270 605 270" />
+                <path data-edge="openclaw-model" d="M605 270 H690" />
+              </g>
+              <g class="architecture-node" data-node="app" transform="translate(30 140)"><rect width="140" height="80" rx="18"/><circle cx="25" cy="25" r="7"/><text x="22" y="50">WEB APP</text><text class="node-sub" x="22" y="68">Mobile UI</text></g>
+              <g class="architecture-node" data-node="bff" transform="translate(250 140)"><rect width="130" height="80" rx="18"/><circle cx="25" cy="25" r="7"/><text x="22" y="50">NODE BFF</text><text class="node-sub" x="22" y="68">API / Saga</text></g>
+              <g class="architecture-node" data-node="e2b" transform="translate(475 50)"><rect width="130" height="80" rx="18"/><circle cx="25" cy="25" r="7"/><text x="22" y="50">E2B API</text><text class="node-sub" x="22" y="68">ACS Manager</text></g>
+              <g class="architecture-node" data-node="sandbox" transform="translate(690 50)"><rect width="170" height="80" rx="18"/><circle cx="25" cy="25" r="7"/><text x="22" y="50">SANDBOX</text><text class="node-sub" x="22" y="68">OpenClaw runtime</text></g>
+              <g class="architecture-node" data-node="openclaw" transform="translate(475 230)"><rect width="130" height="80" rx="18"/><circle cx="25" cy="25" r="7"/><text x="22" y="50">CHANNEL</text><text class="node-sub" x="22" y="68">WebSocket</text></g>
+              <g class="architecture-node" data-node="model" transform="translate(690 230)"><rect width="170" height="80" rx="18"/><circle cx="25" cy="25" r="7"/><text x="22" y="50">MINIMAX</text><text class="node-sub" x="22" y="68">MiniMax-M3</text></g>
+            </svg>
+            <div class="architecture-legend">
+              <span><i class="legend-dot running"></i>调用中</span>
+              <span><i class="legend-dot success"></i>服务正常</span>
+              <span><i class="legend-dot idle"></i>等待调用</span>
+              <strong id="active-operation">等待客户操作</strong>
+            </div>
           </article>
 
-          <article class="card telemetry-card">
-            <div class="telemetry-head">
-              <p class="card-kicker">TELEMETRY</p>
-              <span class="live-label"><i></i> LIVE</span>
+          <article class="console-card activity-card">
+            <header class="card-header">
+              <div class="section-label compact-label">
+                <span>03</span><div><b>SANDBOX API ACTIVITY</b><small>Service calls & backend objects</small></div>
+              </div>
+              <span class="poll-status" id="poll-status">SYNCING</span>
+            </header>
+            <div class="resource-grid" id="resource-grid" aria-live="polite">
+              <div class="resource-skeleton"></div><div class="resource-skeleton"></div><div class="resource-skeleton"></div>
             </div>
-            <dl class="telemetry-list">
-              <div><dt>运行模式</dt><dd id="metric-mode">IDLE</dd></div>
-              <div><dt>实例</dt><dd id="metric-instance">local-mac</dd></div>
-              <div><dt>Gateway</dt><dd id="metric-gateway">待检查</dd></div>
-              <div><dt>Connection ID</dt><dd id="metric-connection">—</dd></div>
-            </dl>
+            <div class="api-table-head"><span>E2B SDK API</span><span>SERVICE</span><span>STATUS</span><span>TIME</span></div>
+            <div class="api-call-list" id="api-call-list" aria-live="polite">
+              <div class="empty-activity"><span>⌁</span><p>操作左侧 APP 后，API 调用会实时出现在这里。</p></div>
+            </div>
           </article>
-        </div>
-
-        <article class="flow-card">
-          <p class="card-kicker">LOCAL FLOW</p>
-          <div class="flow">
-            <div class="flow-step"><b>01</b><span>浏览器 UI</span><small>当前页面</small></div>
-            <i>→</i>
-            <div class="flow-step"><b>02</b><span>本机 BFF</span><small>Loopback API</small></div>
-            <i>→</i>
-            <div class="flow-step"><b>03</b><span>Channel Plugin</span><small>WebSocket</small></div>
-            <i>→</i>
-            <div class="flow-step"><b>04</b><span>OpenClaw</span><small>Local Gateway</small></div>
-          </div>
-        </article>
-      </section>
-
-      <section class="panel" id="panel-soul">
-        <article class="card editor-card">
-          <div class="editor-head">
-            <div>
-              <p class="card-kicker">~/.openclaw/workspace/SOUL.md</p>
-              <h2>塑造龙虾的性格</h2>
-            </div>
-            <button class="button button-quiet" id="reload-soul">重新读取</button>
-          </div>
-          <textarea id="soul-editor" spellcheck="false" placeholder="正在读取 SOUL.md…"></textarea>
-          <div class="editor-footer">
-            <div class="file-meta">
-              <span id="soul-size">— bytes</span>
-              <span id="soul-hash">SHA-256 —</span>
-            </div>
-            <div class="editor-actions">
-              <button class="button button-quiet" id="restore-soul">恢复本次编辑前版本</button>
-              <button class="button button-primary" id="confirm-soul">确认性格并继续</button>
-            </div>
-          </div>
-          <div class="notice" id="soul-notice" hidden></div>
-        </article>
-      </section>
-
-      <section class="panel" id="panel-chat">
-        <article class="card chat-card">
-          <div class="chat-head">
-            <div>
-              <p class="card-kicker">CHANNEL SESSION</p>
-              <h2>和龙虾对话</h2>
-            </div>
-            <div class="chat-head-actions">
-              <span class="chat-state" id="chat-state">等待连接</span>
-              <button class="button button-quiet compact" id="chat-stop">断开并清理</button>
-            </div>
-          </div>
-          <div class="messages" id="messages">
-            <div class="empty-chat">
-              <div>⌁</div>
-              <p>进入龙虾模式后，在这里发送第一条消息。</p>
-            </div>
-          </div>
-          <form class="composer" id="chat-form">
-            <textarea id="chat-input" rows="1" placeholder="输入消息，Enter 发送…" disabled></textarea>
-            <button class="send-button" type="submit" disabled aria-label="发送消息">↑</button>
-          </form>
-          <p class="composer-hint">Shift + Enter 换行 · 消息经本机 Channel 传递</p>
-        </article>
+        </section>
       </section>
     </main>
     <script type="module" src="/app.js"></script>

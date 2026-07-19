@@ -4,6 +4,8 @@ import http from "node:http";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { createSandboxServiceMonitor } from "./observability.js";
+
 const defaultPublicDirectory = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   "../public",
@@ -47,6 +49,7 @@ export function createLocalConsoleServer({
   host = "127.0.0.1",
   port = 3000,
   publicDirectory = defaultPublicDirectory,
+  operationMonitor = createSandboxServiceMonitor(),
 }) {
   let server;
 
@@ -59,6 +62,9 @@ export function createLocalConsoleServer({
     }
     if (request.method === "GET" && pathname === "/api/status") {
       return sendJson(response, 200, controller.getStatus());
+    }
+    if (request.method === "GET" && pathname === "/api/observability") {
+      return sendJson(response, 200, operationMonitor.snapshot());
     }
     if (request.method === "POST" && pathname === "/api/lobster/start") {
       const body = await readJson(request);
