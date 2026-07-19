@@ -204,6 +204,7 @@ test("web UI exposes a phone workflow plus architecture and API observability", 
   const response = await fetch(app.url);
   const html = await response.text();
   const styles = await fetch(`${app.url}/styles.css`).then((result) => result.text());
+  const browserApp = await fetch(`${app.url}/app.js`).then((result) => result.text());
 
   assert.equal(response.status, 200);
   assert.match(html, /龙虾模式/);
@@ -221,10 +222,13 @@ test("web UI exposes a phone workflow plus architecture and API observability", 
   assert.match(html, /id="resource-grid"/);
   assert.doesNotMatch(html, /创建 Sandbox/);
   assert.match(html, /src="\/app\.js"/);
-  assert.match(styles, /body\s*\{[\s\S]*?overflow:\s*hidden/);
+  assert.match(styles, /body\s*\{[^}]*overflow-y:\s*auto/);
+  assert.doesNotMatch(styles, /body\s*\{[^}]*overflow:\s*hidden/);
   assert.match(styles, /\.workbench\s*\{[\s\S]*?height:\s*calc\(100dvh - 84px\)/);
   assert.match(styles, /\.phone-frame\s*\{[\s\S]*?aspect-ratio:\s*410\s*\/\s*810/);
   assert.match(styles, /\.service-workbench\s*\{[\s\S]*?grid-template-rows:\s*minmax\(0,/);
   assert.doesNotMatch(styles, /phone-hardware\s*\{[^}]*display:\s*none/);
   assert.match(styles, /\.composer textarea\s*\{[\s\S]*?caret-color:\s*var\(--coral-dark\)/);
+  assert.match(browserApp, /history\.scrollRestoration\s*=\s*"manual"/);
+  assert.match(browserApp, /window\.scrollTo\(0,\s*0\)/);
 });

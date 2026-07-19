@@ -26,12 +26,13 @@ body {
     radial-gradient(circle at 72% -20%, rgba(52, 130, 110, .22), transparent 35rem),
     linear-gradient(145deg, #07110f, #091412 62%, #050c0b);
   font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 button, textarea { font: inherit; }
 button { color: inherit; }
 
-.workspace-shell { width: min(1540px, calc(100% - 40px)); height: 100dvh; margin: 0 auto; padding: 12px 0; }
+.workspace-shell { width: min(1540px, calc(100% - 40px)); min-height: 100dvh; margin: 0 auto; padding: 12px 0; }
 .console-header { height: 50px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--line); margin-bottom: 10px; }
 .brand { display: flex; align-items: center; gap: 11px; }
 .brand-mark { width: 34px; height: 34px; display: grid; place-items: center; border: 1px solid rgba(112,219,186,.5); border-radius: 10px; color: var(--mint); font: 800 15px ui-monospace, monospace; box-shadow: inset 0 0 18px rgba(112,219,186,.08); }
