@@ -27,7 +27,11 @@ test("Terraform creates an ACS profile cluster and manages sandbox addons", asyn
   assert.match(main, /new_nat_gateway\s*=\s*var\.enable_snat/);
   assert.match(main, /name\s*=\s*"ack-agent-sandbox-controller"/);
   assert.match(main, /name\s*=\s*"ack-sandbox-manager"/);
-  assert.match(main, /name\s*=\s*"managed-aliyun-acr-credential-helper"/);
+  assert.doesNotMatch(main, /managed-aliyun-acr-credential-helper/);
+  assert.doesNotMatch(
+    main,
+    /resource\s+"alicloud_cs_kubernetes_addon"\s+"virtual_node"/,
+  );
   assert.match(main, /deletion_protection\s*=\s*var\.deletion_protection/);
 });
 

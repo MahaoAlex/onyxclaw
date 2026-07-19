@@ -74,9 +74,13 @@ Backend；不要提交本地 state。
 使用 `kubectl port-forward`。只有准备好域名和证书后，才设置
 `create_default_alb=true` 与 `sandbox_manager_tls=true`。
 
-集群默认安装 managed aliyun-acr-credential-helper，供 `default` 命名空间从同账号、
-同地域 ACR 拉取私有镜像。该 helper 不会给私有 GHCR 提供凭据。Public GHCR 可直接
-拉取；私有 GHCR、跨账号或跨地域镜像需要额外配置。
+当前验证镜像位于 Public GHCR，集群可直接匿名拉取，因此不安装
+`managed-aliyun-acr-credential-helper`，也不要求无关的 `AliyunCSManagedAcrRole`。
+若后续切换到同账号 ACR 私有镜像，再显式增加该 addon 和服务角色授权；私有 GHCR、
+跨账号或跨地域镜像需要额外配置。
+
+ACS profile 集群会随集群生命周期提供 `acs-virtual-node`。它不作为独立
+`alicloud_cs_kubernetes_addon` 资源重复安装；云端验收只检查并按需升级其版本。
 
 ## 部署和清理
 

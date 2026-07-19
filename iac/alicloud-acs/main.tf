@@ -55,10 +55,6 @@ resource "alicloud_cs_managed_kubernetes" "this" {
   }
 
   addons {
-    name = "managed-aliyun-acr-credential-helper"
-  }
-
-  addons {
     name = "alb-ingress-controller"
     config = jsonencode({
       albIngress = {
@@ -80,16 +76,9 @@ resource "alicloud_cs_managed_kubernetes" "this" {
   }
 }
 
-resource "alicloud_cs_kubernetes_addon" "virtual_node" {
-  cluster_id = alicloud_cs_managed_kubernetes.this.id
-  name       = "acs-virtual-node"
-}
-
 resource "alicloud_cs_kubernetes_addon" "sandbox_controller" {
   cluster_id = alicloud_cs_managed_kubernetes.this.id
   name       = "ack-agent-sandbox-controller"
-
-  depends_on = [alicloud_cs_kubernetes_addon.virtual_node]
 }
 
 resource "alicloud_cs_kubernetes_addon" "sandbox_manager" {
@@ -103,6 +92,4 @@ resource "alicloud_cs_kubernetes_addon" "sandbox_manager" {
 data "alicloud_cs_cluster_credential" "this" {
   cluster_id  = alicloud_cs_managed_kubernetes.this.id
   output_file = "${path.module}/generated/kubeconfig"
-
-  depends_on = [alicloud_cs_kubernetes_addon.sandbox_manager]
 }
