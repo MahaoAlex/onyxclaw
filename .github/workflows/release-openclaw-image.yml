@@ -1,0 +1,154 @@
+name: Release OpenClaw image
+
+on:
+  push:
+    tags:
+      - "v*"
+
+concurrency:
+  group: openclaw-image-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  publish:
+    name: Build, publish, and archive
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Check out release source
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Derive immutable release coordinates
+        id: release
+        shell: bash
+        run: |
+          set -euo pipefail
+          release_tag="${GITHUB_REF_NAME}"
+          if [[ ! "${release_tag}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "Release tag must be SemVer-like (for example v0.2.0)." >&2
+            exit 1
+          fi
+
+          owner="${GITHUB_REPOSITORY_OWNER,,}"
+          image="ghcr.io/${owner}/onyxclaw-openclaw"
+          artifact="onyxclaw-openclaw-${release_tag}-linux-amd64"
+          {
+            echo "tag=${release_tag}"
+            echo "image=${image}"
+            echo "image_ref=${image}:${release_tag}"
+            echo "artifact=${artifact}"
+          } >> "${GITHUB_OUTPUT}"
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@b45d80f862d83dbcd57f89517bcf500b2ab88fb2 # v4.0.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4.0.0
+
+      - name: Build once, push to GHCR, and export OCI archive
+        id: build
+        uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
+        with:
+          context: .
+          file: iac/alicloud-acs/image/Dockerfile
+          platforms: linux/amd64
+          pull: true
+          tags: ${{ steps.release.outputs.image_ref }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.version=${{ steps.release.outputs.tag }}
+          outputs: |
+            type=registry,name=${{ steps.release.outputs.image_ref }},push=true
+            type=oci,dest=/tmp/${{ steps.release.outputs.artifact }}.oci.tar
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: mode=max
+          sbom: true
+
+      - name: Prepare release assets
+        shell: bash
+        env:
+          IMAGE_DIGEST: ${{ steps.build.outputs.digest }}
+          IMAGE_REF: ${{ steps.release.outputs.image_ref }}
+          RELEASE_TAG: ${{ steps.release.outputs.tag }}
+          ARCHIVE_NAME: ${{ steps.release.outputs.artifact }}
+        run: |
+          set -euo pipefail
+          if [[ ! "${IMAGE_DIGEST}" =~ ^sha256:[0-9a-f]{64}$ ]]; then
+            echo "Build did not return a valid registry digest." >&2
+            exit 1
+          fi
+
+          mkdir -p release
+          gzip -9 < "/tmp/${ARCHIVE_NAME}.oci.tar" > "release/${ARCHIVE_NAME}.oci.tar.gz"
+          archive_size="$(stat -c '%s' "release/${ARCHIVE_NAME}.oci.tar.gz")"
+          if (( archive_size >= 2147483648 )); then
+            echo "Compressed OCI archive exceeds GitHub's 2 GiB per-asset limit." >&2
+            exit 1
+          fi
+
+          docker buildx imagetools inspect "${IMAGE_REF}" > release/image-manifest.txt
+          cat > release/image-reference.txt <<EOF
+          release=${RELEASE_TAG}
+          image=${IMAGE_REF}
+          digest=${IMAGE_DIGEST}
+          immutable_image=${IMAGE_REF%@*}@${IMAGE_DIGEST}
+          platform=linux/amd64
+          source_commit=${GITHUB_SHA}
+          EOF
+          (
+            cd release
+            sha256sum "${ARCHIVE_NAME}.oci.tar.gz" image-manifest.txt image-reference.txt > checksums.sha256
+          )
+          cat > release/release-notes.md <<EOF
+          ## OnyxClaw OpenClaw image ${RELEASE_TAG}
+
+          Registry image:
+
+          \`${IMAGE_REF}\`
+
+          Immutable image:
+
+          \`${IMAGE_REF%@*}@${IMAGE_DIGEST}\`
+
+          The OCI archive is the offline copy. Verify it with \`checksums.sha256\`, decompress it,
+          and import or mirror it with an OCI-compatible tool such as Podman or Skopeo.
+          EOF
+
+      - name: Create or refresh GitHub Release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ steps.release.outputs.tag }}
+        run: |
+          set -euo pipefail
+          if gh release view "${RELEASE_TAG}" >/dev/null 2>&1; then
+            gh release upload "${RELEASE_TAG}" release/* --clobber
+            gh release edit "${RELEASE_TAG}" --notes-file release/release-notes.md
+          else
+            gh release create "${RELEASE_TAG}" release/* \
+              --verify-tag \
+              --title "OnyxClaw ${RELEASE_TAG}" \
+              --notes-file release/release-notes.md
+          fi
+
+      - name: Summarize immutable image
+        shell: bash
+        run: |
+          {
+            echo "### Published OpenClaw image"
+            echo
+            echo '\`${{ steps.release.outputs.image_ref }}@${{ steps.build.outputs.digest }}\`'
+            echo
+            echo "The matching OCI archive and checksums are attached to GitHub Release ${{ steps.release.outputs.tag }}."
+          } >> "${GITHUB_STEP_SUMMARY}"

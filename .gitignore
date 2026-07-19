@@ -1,4 +1,9 @@
 node_modules/
+.terraform/
+*.tfstate
+*.tfstate.*
+iac/alicloud-acs/generated/
+iac/alicloud-acs/*.tfvars
 artifacts/
 .env
 .env.*

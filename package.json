@@ -10,6 +10,9 @@
     "phase0:local": "node packages/test-orchestrator/src/local-e2e.js",
     "phase1:local": "node packages/local-console/src/index.js",
     "phase1:smoke": "node packages/local-console/src/smoke.js",
+    "iac:alicloud:test": "node --test iac/alicloud-acs/test/*.test.js",
+    "iac:alicloud": "node iac/alicloud-acs/scripts/stack.mjs",
+    "iac:alicloud:local": "node --env-file-if-exists=.env.alicloud.local iac/alicloud-acs/scripts/stack.mjs",
     "dev": "npm run phase1:local"
   },
   "engines": {

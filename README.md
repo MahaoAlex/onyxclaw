@@ -16,6 +16,11 @@ Current implementation:
 - loopback-only Phase 1 UI for local Channel lifecycle, `SOUL.md` editing, and
   text chat, enforced as a serial connect → personality confirmation → chat
   onboarding flow with a one-time personality-based greeting.
+- Alibaba Cloud ACS disposable IaC for VPC, cluster, Agent Sandbox components,
+  an OpenClaw warm pool, derived image bootstrap, and reverse cleanup.
+- tag-driven GitHub Release pipeline that builds the derived `linux/amd64`
+  image once, publishes it to GHCR, and attaches an OCI archive, digest,
+  manifest, and checksums to the matching Release.
 
 ## Requirements
 
@@ -59,12 +64,24 @@ With the UI server running, execute the complete local acceptance flow with:
 npm run phase1:smoke
 ```
 
-Current acceptance status: 38 automated tests passing, plus real macOS
+Current acceptance status: automated tests plus real macOS
 Phase 0 and Phase 1 OpenClaw runs passing. Cloud E2B/Sandbox lifecycle work is
-tracked separately in the proposal and is not part of local mode.
+tracked separately from local mode.
+
+## Alibaba Cloud ACS IaC
+
+See [docs/alibaba-acs-design.md](./docs/alibaba-acs-design.md) for the complete
+flow and [iac/alicloud-acs/README.md](./iac/alicloud-acs/README.md) for commands.
+
+The derived image is released by pushing a SemVer tag such as `v0.1.0`. The
+`Release OpenClaw image` workflow publishes
+`ghcr.io/mahaoalex/onyxclaw-openclaw:<tag>` and records its immutable digest in
+the corresponding GitHub Release. Configure ACS with the `image@sha256:...`
+value from that Release, not with a floating tag.
 
 ## Design
 
 - [Initial requirements](./docs/init.md)
 - [Cloud validation proposal](./docs/proposal.md)
 - [Cloud provider configuration](./docs/provider-config.md)
+- [Alibaba Cloud ACS Agent Sandbox design](./docs/alibaba-acs-design.md)
