@@ -47,6 +47,10 @@ export class WsPlatformSimulator {
     this.#core.issueBootstrapToken(instanceId, token);
   }
 
+  revokeBootstrapToken(instanceId) {
+    this.#core.revokeBootstrapToken(instanceId);
+  }
+
   start() {
     this.#server = new WebSocketServer({ port: this.#port, host: this.#host });
     this.#server.on("connection", (socket) => this.#handleConnection(socket));

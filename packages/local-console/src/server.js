@@ -61,7 +61,8 @@ export function createLocalConsoleServer({
       return sendJson(response, 200, controller.getStatus());
     }
     if (request.method === "POST" && pathname === "/api/lobster/start") {
-      return sendJson(response, 200, await controller.startLobsterMode());
+      const body = await readJson(request);
+      return sendJson(response, 200, await controller.startLobsterMode(body));
     }
     if (request.method === "POST" && pathname === "/api/lobster/stop") {
       return sendJson(response, 200, await controller.stopLobsterMode());

@@ -19,6 +19,10 @@ export class ChannelPlatformSimulator {
     });
   }
 
+  revokeBootstrapToken(instanceId) {
+    this.#bootstrapTokens.delete(instanceId);
+  }
+
   register({ instanceId, accountId, bootstrapToken, pluginVersion }) {
     const issued = this.#bootstrapTokens.get(instanceId);
     if (!issued || issued.value !== bootstrapToken) {

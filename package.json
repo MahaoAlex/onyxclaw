@@ -7,6 +7,7 @@
     "test": "node --test",
     "test:unit": "node --test packages/*/test/*.test.js",
     "test:local": "node --test test/local/*.test.js",
+    "test:cloud": "node --test packages/cloud-config/test/*.test.js packages/cloud-runtime/test/*.test.js",
     "phase0:local": "node packages/test-orchestrator/src/local-e2e.js",
     "phase1:local": "node packages/local-console/src/index.js",
     "phase1:smoke": "node packages/local-console/src/smoke.js",

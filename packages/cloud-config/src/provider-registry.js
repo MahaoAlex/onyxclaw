@@ -21,11 +21,38 @@ function positiveInteger(value, label, errors) {
   if (!Number.isInteger(value) || value <= 0) errors.push(`${label} must be a positive integer`);
 }
 
-function validateEndpoint(value, label, secureProtocol, localProtocol, errors) {
+function isPrivateHostname(hostname) {
+  const normalized = hostname.toLowerCase();
+  if (["127.0.0.1", "localhost", "::1"].includes(normalized)) return true;
+  if (/^10\./.test(normalized) || /^192\.168\./.test(normalized)) return true;
+  const match = normalized.match(/^172\.(\d+)\./);
+  if (match && Number(match[1]) >= 16 && Number(match[1]) <= 31) return true;
+  if (/^(fc|fd)[0-9a-f]{2}:/i.test(normalized)) return true;
+  return [".svc", ".svc.cluster.local", ".internal", ".local"].some((suffix) =>
+    normalized.endsWith(suffix),
+  );
+}
+
+function validateEndpoint(
+  value,
+  label,
+  secureProtocol,
+  localProtocol,
+  errors,
+  { allowPrivateInsecure = false } = {},
+) {
   try {
     const url = new URL(value);
     const loopback = ["127.0.0.1", "localhost", "::1"].includes(url.hostname);
-    if (url.protocol !== secureProtocol && !(loopback && url.protocol === localProtocol)) {
+    if (
+      url.protocol !== secureProtocol &&
+      !(loopback && url.protocol === localProtocol) &&
+      !(
+        allowPrivateInsecure &&
+        url.protocol === localProtocol &&
+        isPrivateHostname(url.hostname)
+      )
+    ) {
       errors.push(`${label} must use ${secureProtocol.slice(0, -1)}`);
     }
   } catch {
@@ -46,7 +73,16 @@ function validateProvider(id, provider) {
     `${id}.api.compatibilityVersion`,
     errors,
   );
-  validateEndpoint(provider?.api?.baseUrl, `${id}.api.baseUrl`, "https:", "http:", errors);
+  const vpcPrivateApi =
+    provider?.capabilities?.vpc === true && provider?.api?.privateNetworkOnly === true;
+  validateEndpoint(
+    provider?.api?.baseUrl,
+    `${id}.api.baseUrl`,
+    "https:",
+    "http:",
+    errors,
+    { allowPrivateInsecure: vpcPrivateApi },
+  );
   positiveInteger(provider?.api?.requestTimeoutMs, `${id}.api.requestTimeoutMs`, errors);
 
   requiredString(provider?.sandbox?.templateId, `${id}.sandbox.templateId`, errors);
@@ -77,6 +113,11 @@ function validateProvider(id, provider) {
     "wss:",
     "ws:",
     errors,
+    {
+      allowPrivateInsecure:
+        provider?.capabilities?.vpc === true &&
+        provider?.channel?.privateNetworkOnly === true,
+    },
   );
   positiveInteger(
     provider?.channel?.connectTimeoutMs,

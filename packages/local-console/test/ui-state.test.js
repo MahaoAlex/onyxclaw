@@ -30,3 +30,17 @@ test("after continuing, the UI follows the server-controlled serial step", () =>
     },
   );
 });
+
+test("cloud allocation advances to personality without enabling start again", () => {
+  assert.deepEqual(
+    resolveLandingView({
+      initialLanding: false,
+      status: { mode: "allocated", currentStep: "soul", soulConfirmed: false },
+    }),
+    {
+      visibleStep: "soul",
+      startLabel: "云端 Sandbox 已创建",
+      startDisabled: true,
+    },
+  );
+});

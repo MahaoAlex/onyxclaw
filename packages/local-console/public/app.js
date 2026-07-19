@@ -51,6 +51,7 @@ function renderStatus(status) {
   const labels = {
     idle: "尚未连接",
     starting: "正在启动本机 OpenClaw…",
+    allocated: "云端 Sandbox 已创建，等待确认性格",
     connected: "本机 OpenClaw 已连接",
     error: "连接异常",
   };
@@ -61,12 +62,13 @@ function renderStatus(status) {
   elements.metricGateway.textContent = status.gateway?.ok ? "HEALTHY" : "待检查";
   elements.metricConnection.textContent = status.connectionId ?? "—";
   const connected = status.mode === "connected";
+  const allocated = status.mode === "allocated";
   const chatReady = connected && status.soulConfirmed;
   const busy = status.mode === "starting";
   const landing = resolveLandingView({ initialLanding, status });
   elements.start.textContent = landing.startLabel;
   elements.start.disabled = landing.startDisabled;
-  elements.stop.disabled = !connected || busy;
+  elements.stop.disabled = (!connected && !allocated) || busy;
   elements.chatInput.disabled = !chatReady;
   elements.send.disabled = !chatReady;
   elements.chatState.textContent = chatReady ? "已连接 · 可以发送" : "等待完成设置";

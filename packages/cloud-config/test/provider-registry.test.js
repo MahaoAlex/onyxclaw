@@ -122,6 +122,29 @@ test("rejects unsafe endpoints and invalid sandbox paths", async (t) => {
   );
 });
 
+test("allows insecure endpoints only when explicitly restricted to a VPC", async (t) => {
+  const config = validConfig();
+  const selected = config.providers["vendor-a"];
+  selected.api.baseUrl = "http://sandbox-manager.sandbox-system.svc.cluster.local:7788";
+  selected.api.privateNetworkOnly = true;
+  selected.channel.publicUrl = "ws://channel.default.svc.cluster.local:8080/connect";
+  selected.channel.privateNetworkOnly = true;
+  selected.capabilities.vpc = true;
+
+  const registry = await fixture(t, config);
+  assert.equal(registry.getProvider().api.privateNetworkOnly, true);
+
+  selected.api.baseUrl = "http://public.example.com";
+  await assert.rejects(fixture(t, config), /api\.baseUrl must use https/);
+
+  selected.api.baseUrl = "http://sandbox-manager.sandbox-system.svc.cluster.local:7788";
+  selected.capabilities.vpc = false;
+  await assert.rejects(
+    fixture(t, config),
+    /api\.baseUrl must use https|channel\.publicUrl must use wss/,
+  );
+});
+
 test("rejects an unknown selected provider", async (t) => {
   await assert.rejects(
     fixture(t, validConfig(), { ONYXCLAW_PROVIDER: "missing" }),
@@ -146,4 +169,27 @@ test("committed provider example remains valid and references external secrets",
   assert.equal(registry.defaultProviderId, "vendor-a");
   assert.equal(registry.toPublicSummary().providers.length, 1);
   assert.equal(registry.getSecrets().channelSigningSecret, "test-only");
+});
+
+test("committed Alibaba ACS provider uses private endpoints and node paths", async () => {
+  const repositoryRoot = path.resolve(
+    path.dirname(fileURLToPath(import.meta.url)),
+    "../../..",
+  );
+  const registry = await loadProviderRegistry({
+    configPath: path.join(repositoryRoot, "config", "providers.alicloud.example.json"),
+    env: {
+      ALICLOUD_ACS_E2B_API_KEY: "test-only",
+      ALICLOUD_ACS_MODEL_API_KEY: "test-only",
+      ALICLOUD_ACS_CHANNEL_SIGNING_SECRET: "test-only",
+    },
+  });
+  const provider = registry.getProvider("alicloud-acs");
+
+  assert.equal(provider.api.privateNetworkOnly, true);
+  assert.equal(provider.sandbox.templateId, "onyxclaw");
+  assert.equal(provider.sandbox.defaultUser, "node");
+  assert.equal(provider.sandbox.workspaceDir, "/home/node/.openclaw/workspace");
+  assert.equal(provider.openclaw.pluginInstallMode, "preinstalled");
+  assert.equal(provider.capabilities.vpc, true);
 });
