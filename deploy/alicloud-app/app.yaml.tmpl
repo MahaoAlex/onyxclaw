@@ -1,0 +1,82 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: onyxclaw-app
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: onyxclaw-app
+  template:
+    metadata:
+      labels:
+        app: onyxclaw-app
+        alibabacloud.com/acs: "true"
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - name: app
+          image: {{IMAGE}}
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 3000
+            - name: channel
+              containerPort: 18890
+          env:
+            - name: ALICLOUD_ACS_E2B_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: onyxclaw-app-secrets
+                  key: e2b-api-key
+            - name: ALICLOUD_ACS_MODEL_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: onyxclaw-app-secrets
+                  key: model-api-key
+            - name: ALICLOUD_ACS_CHANNEL_SIGNING_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: onyxclaw-app-secrets
+                  key: channel-signing-secret
+            - name: ONYXCLAW_OPENCLAW_BASE_CONFIG_JSON
+              valueFrom:
+                secretKeyRef:
+                  name: onyxclaw-app-secrets
+                  key: openclaw-base-config-json
+          readinessProbe:
+            httpGet:
+              path: /api/status
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: 250m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            runAsUser: 1000
+            capabilities:
+              drop: ["ALL"]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: onyxclaw-app
+  namespace: default
+spec:
+  selector:
+    app: onyxclaw-app
+  ports:
+    - name: http
+      port: 3000
+      targetPort: http
+    - name: channel
+      port: 18890
+      targetPort: channel

@@ -132,6 +132,10 @@ export class AlibabaAcsAdapter {
       return { sandboxId: id, status: "killed" };
     });
   }
+
+  close() {
+    this.#client.close?.();
+  }
 }
 
 export function createAlibabaAcsAdapter({

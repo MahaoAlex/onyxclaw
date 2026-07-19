@@ -1,0 +1,40 @@
+import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+import path from "node:path";
+import test from "node:test";
+import { fileURLToPath } from "node:url";
+
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
+const read = (name) => readFile(path.join(root, name), "utf8");
+
+test("cloud APP image includes Node and the pinned ACS Python SDK", async () => {
+  const dockerfile = await read("deploy/alicloud-app/Dockerfile");
+  assert.match(dockerfile, /FROM node:22-bookworm-slim/);
+  assert.match(dockerfile, /smoke-requirements\.txt/);
+  assert.match(dockerfile, /python3 -m venv \/opt\/venv/);
+  assert.match(dockerfile, /USER node/);
+  assert.match(dockerfile, /packages\/cloud-runtime\/src\/cloud-app\.js/);
+});
+
+test("ACS manifest keeps secrets external and exposes UI plus Channel ports", async () => {
+  const manifest = await read("deploy/alicloud-app/app.yaml.tmpl");
+  assert.match(manifest, /kind: Deployment/);
+  assert.match(manifest, /image: \{\{IMAGE\}\}/);
+  assert.match(manifest, /secretKeyRef:/);
+  assert.match(manifest, /name: ALICLOUD_ACS_E2B_API_KEY/);
+  assert.match(manifest, /name: ALICLOUD_ACS_MODEL_API_KEY/);
+  assert.match(manifest, /containerPort: 3000/);
+  assert.match(manifest, /containerPort: 18890/);
+  assert.match(manifest, /name: onyxclaw-app/);
+  assert.doesNotMatch(manifest, /runtime-secret|model-secret/);
+});
+
+test("APP release tags publish a dedicated immutable container", async () => {
+  const workflow = await read(".github/workflows/release-cloud-app.yml");
+  assert.match(workflow, /app-v\*/);
+  assert.match(workflow, /deploy\/alicloud-app\/Dockerfile/);
+  assert.match(workflow, /onyxclaw-app/);
+  assert.match(workflow, /steps\.build\.outputs\.digest/);
+  assert.match(workflow, /packages:\s*write/);
+  assert.doesNotMatch(workflow, /uses:\s+[^\s]+@v\d+/);
+});

@@ -1,0 +1,8 @@
+.git
+.env*
+node_modules
+artifacts
+iac/alicloud-acs/.terraform
+iac/alicloud-acs/generated
+iac/alicloud-acs/*.tfstate*
+iac/alicloud-acs/*.tfvars

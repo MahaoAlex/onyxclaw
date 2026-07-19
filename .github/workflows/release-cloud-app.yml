@@ -1,0 +1,70 @@
+name: Release cloud APP image
+
+on:
+  push:
+    tags:
+      - "app-v*"
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Check out source
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Derive image coordinates
+        id: release
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ ! "${GITHUB_REF_NAME}" =~ ^app-v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "APP release tag must look like app-v0.1.0" >&2
+            exit 1
+          fi
+          owner="${GITHUB_REPOSITORY_OWNER,,}"
+          echo "image_ref=ghcr.io/${owner}/onyxclaw-app:${GITHUB_REF_NAME}" >> "${GITHUB_OUTPUT}"
+
+      - name: Log in to GHCR
+        uses: docker/login-action@b45d80f862d83dbcd57f89517bcf500b2ab88fb2 # v4.0.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4.0.0
+
+      - name: Build and publish cloud APP
+        id: build
+        uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
+        with:
+          context: .
+          file: deploy/alicloud-app/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.release.outputs.image_ref }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: mode=max
+          sbom: true
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          IMAGE_REF: ${{ steps.release.outputs.image_ref }}
+          IMAGE_DIGEST: ${{ steps.build.outputs.digest }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf 'Cloud APP image: `%s@%s`\n' "${IMAGE_REF}" "${IMAGE_DIGEST}" > /tmp/app-release.md
+          gh release create "${GITHUB_REF_NAME}" --verify-tag \
+            --title "OnyxClaw cloud APP ${GITHUB_REF_NAME}" \
+            --notes-file /tmp/app-release.md
+
+      - name: Summarize immutable image
+        run: echo '${{ steps.release.outputs.image_ref }}@${{ steps.build.outputs.digest }}' >> "${GITHUB_STEP_SUMMARY}"

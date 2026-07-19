@@ -28,7 +28,7 @@
         "pluginInstallMode": "preinstalled"
       },
       "channel": {
-        "publicUrl": "ws://onyxclaw-channel.default.svc.cluster.local:8080/internal/channel/connect",
+        "publicUrl": "ws://onyxclaw-app.default.svc.cluster.local:18890",
         "privateNetworkOnly": true,
         "connectTimeoutMs": 120000,
         "signingSecretEnv": "ALICLOUD_ACS_CHANNEL_SIGNING_SECRET"
