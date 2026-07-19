@@ -6,7 +6,7 @@ RUN test -x /bin/bash \
     && command -v cp \
     && command -v mv \
     && command -v mkdir \
-    && install -d -m 0755 -o node -g node /opt/onyxclaw/channel /opt/onyxclaw/bin
+    && install -d -m 0755 -o node -g node /run/e2b /opt/onyxclaw/channel /opt/onyxclaw/bin
 
 COPY --chown=node:node packages/onyxclaw-channel/ /opt/onyxclaw/channel/
 COPY --chown=node:node iac/alicloud-acs/image/entrypoint.sh /opt/onyxclaw/bin/entrypoint.sh
