@@ -74,13 +74,45 @@ Backend；不要提交本地 state。
 使用 `kubectl port-forward`。只有准备好域名和证书后，才设置
 `create_default_alb=true` 与 `sandbox_manager_tls=true`。
 
-当前验证镜像位于 Public GHCR，集群可直接匿名拉取，因此不安装
+Release 镜像会先发布到 Public GHCR；本轮实操将相同 digest 镜像到同地域 ACR，避免
+ACS 从杭州跨境拉取 GHCR 时长时间等待。当前仍不安装
 `managed-aliyun-acr-credential-helper`，也不要求无关的 `AliyunCSManagedAcrRole`。
 若后续切换到同账号 ACR 私有镜像，再显式增加该 addon 和服务角色授权；私有 GHCR、
 跨账号或跨地域镜像需要额外配置。
 
 ACS profile 集群会随集群生命周期提供 `acs-virtual-node`。它不作为独立
 `alicloud_cs_kubernetes_addon` 资源重复安装；云端验收只检查并按需升级其版本。
+
+## E2B SDK 冒烟验证
+
+Sandbox Manager v0.6.6 会把安装组件时的 `adminApiKey` 转换成 E2B 运行时密钥，并保存在
+`sandbox-system/e2b-key-store`。因此 `TF_VAR_sandbox_admin_api_key` 是组件初始化输入，不能
+直接假设它就是 SDK 最终使用的密钥。APP/BFF 生产环境应从受控 Secret 管理流程获取 Team
+Key；下面的本机 smoke 只为集群管理员验证，运行时读取 Secret 且不会输出密钥。
+
+```bash
+python3 -m venv /tmp/onyx-acs-e2e-venv
+/tmp/onyx-acs-e2e-venv/bin/pip install -r iac/alicloud-acs/smoke-requirements.txt
+kubectl --kubeconfig iac/alicloud-acs/generated/kubeconfig \
+  port-forward -n sandbox-system service/sandbox-manager 18081:7788
+```
+
+保持端口转发运行，在另一个终端执行：
+
+```bash
+/tmp/onyx-acs-e2e-venv/bin/python iac/alicloud-acs/scripts/e2b-smoke.py
+```
+
+脚本使用官方兼容组合 `e2b==2.24.0`、`e2b-code-interpreter==2.7.0` 和固定提交的
+`kruise-agents` 私有协议补丁；它领取预热实例，以 `user="node"` 验证
+`commands.run` 与 `files.write/read`，并在 `finally` 中执行 `kill`。本机端口转发与 Manager
+返回的 VPC 数据面域名不同，因此脚本只在调试客户端内改写路由，不修改云端正确配置。
+
+当前已验收镜像为 ACR `v0.1.2`，固定 digest：
+
+```text
+sha256:740dc2a7591f5cbca7e0bc10a8fc78f310738a3fd1648e3079c26b4c603d7eae
+```
 
 ## 部署和清理
 

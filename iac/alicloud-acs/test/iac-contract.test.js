@@ -138,3 +138,19 @@ test("release tags publish one immutable GHCR image and an OCI release archive",
   assert.match(workflow, /gh release (create|upload)/);
   assert.doesNotMatch(workflow, /uses:\s+[^\s]+@v\d+/);
 });
+
+test("cloud smoke test pins the supported SDK and never exposes the runtime key", async () => {
+  const [requirements, smoke] = await Promise.all([
+    read("smoke-requirements.txt"),
+    read("scripts/e2b-smoke.py"),
+  ]);
+
+  assert.match(requirements, /^e2b==2\.24\.0$/m);
+  assert.match(requirements, /^e2b-code-interpreter==2\.7\.0$/m);
+  assert.match(requirements, /ef43b4b644ff47d86670ddfebbe73de41e4e4c8f/);
+  assert.match(smoke, /secret\/e2b-key-store/);
+  assert.match(smoke, /patch_e2b\(https=False\)/);
+  assert.match(smoke, /user=args\.runtime_user/);
+  assert.match(smoke, /finally:\s*\n\s+if claimed is not None:\s*\n\s+claimed\.kill\(\)/);
+  assert.doesNotMatch(smoke, /print\([^\n]*(api_key|runtime_key|\bkey\b)/i);
+});
