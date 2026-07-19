@@ -404,25 +404,29 @@ WS   /internal/channel/connect
 
 ### 8.1 配置
 
-最小环境变量：
+云端使用“一个 E2B 兼容实现 + 多个 Provider Profile”。详细字段、Secret 分层和
+新增厂商流程见 [provider-config.md](./provider-config.md)。
+
+部署选择：
 
 ```text
-E2B_API_URL
-E2B_API_KEY
-E2B_TEMPLATE_ID
-OPENCLAW_MODEL_API_KEY
-CHANNEL_PUBLIC_URL
-CHANNEL_SIGNING_SECRET
+ONYXCLAW_PROVIDER_CONFIG
+ONYXCLAW_PROVIDER
 ARTIFACT_STORE_URL（可选）
 ```
 
-同一套测试可以通过替换 `E2B_API_URL` 运行在：
+Profile 保存 API URL、Template ID、Sandbox 路径、OpenClaw 启动信息、Channel
+公开 URL、生命周期策略和 capability flags；Profile 只保存 Secret 环境变量名，
+真实 API Key、模型 Key 和 signing secret 由环境变量或 Secret Manager 注入。
+
+同一套测试可以通过切换受信任的 `ONYXCLAW_PROVIDER` 运行在：
 
 - 你们的 E2B 兼容 Sandbox 服务；
 - 官方/参考 E2B 环境；
 - 本地 mock，用于 UI 和失败场景开发。
 
-这比在业务代码中建设 Provider Adapter 更简单，也更适合兼容性对比。
+浏览器只能选择已经配置的 provider ID，不能传入任意 API URL。只有 contract test
+证明某厂商存在无法配置化的语义差异时，才增加小型专用 Adapter。
 
 ### 8.2 Docker 部署
 
@@ -504,7 +508,7 @@ Tester Browser
 | 首次进入对话后基于性格主动问候且只生成一次 | 通过 | Controller tests 与真实 smoke |
 | 失败启动自动禁用 Channel，正常退出可清理 | 通过 | Controller tests 与 smoke 最终步骤 |
 | 修改型 localhost API 防跨站表单调用 | 通过 | 专用请求头校验测试 |
-| 自动化回归 | 通过 | 32/32 tests passed |
+| 自动化回归 | 通过 | 38/38 tests passed（含 6 项 Provider 配置测试） |
 
 最近一次真实 Phase 0 报告：
 

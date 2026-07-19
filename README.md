@@ -59,7 +59,7 @@ With the UI server running, execute the complete local acceptance flow with:
 npm run phase1:smoke
 ```
 
-Current local acceptance status: 32 automated tests passing, plus real macOS
+Current acceptance status: 38 automated tests passing, plus real macOS
 Phase 0 and Phase 1 OpenClaw runs passing. Cloud E2B/Sandbox lifecycle work is
 tracked separately in the proposal and is not part of local mode.
 
@@ -67,3 +67,4 @@ tracked separately in the proposal and is not part of local mode.
 
 - [Initial requirements](./docs/init.md)
 - [Cloud validation proposal](./docs/proposal.md)
+- [Cloud provider configuration](./docs/provider-config.md)
