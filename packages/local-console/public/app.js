@@ -24,6 +24,7 @@ const elements = {
   chatInput: document.querySelector("#chat-input"),
   send: document.querySelector(".send-button"),
   chatStop: document.querySelector("#chat-stop"),
+  resetUser: document.querySelector("#reset-user"),
   resourceGrid: document.querySelector("#resource-grid"),
   apiCallList: document.querySelector("#api-call-list"),
   pollStatus: document.querySelector("#poll-status"),
@@ -243,6 +244,19 @@ function addMessage(role, text, metadata) {
   elements.messages.scrollTop = elements.messages.scrollHeight;
 }
 
+function resetChatView() {
+  elements.messages.replaceChildren();
+  const empty = document.createElement("div");
+  empty.className = "empty-chat";
+  const glyph = document.createElement("div");
+  glyph.textContent = "⌁";
+  const copy = document.createElement("p");
+  copy.textContent = "龙虾准备好后会先向你问好。";
+  empty.append(glyph, copy);
+  elements.messages.append(empty);
+  elements.chatInput.value = "";
+}
+
 async function ensureHello() {
   if (helloShown || helloLoading) return;
   helloLoading = true;
@@ -287,6 +301,23 @@ elements.stop.addEventListener("click", async () => {
     notice(elements.modeNotice, "连接与测试资源已清理。");
   } catch (error) {
     notice(elements.modeNotice, error.message, true);
+  }
+});
+
+elements.resetUser.addEventListener("click", async () => {
+  elements.resetUser.disabled = true;
+  try {
+    const status = await api("/api/session/reset", { method: "POST" });
+    helloShown = false;
+    helloLoading = false;
+    initialLanding = true;
+    resetChatView();
+    renderStatus(status);
+    notice(elements.modeNotice, "已清理连接和会话状态，现在按全新用户流程开始。");
+  } catch (error) {
+    notice(elements.modeNotice, `重置失败：${error.message}`, true);
+  } finally {
+    elements.resetUser.disabled = false;
   }
 });
 

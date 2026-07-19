@@ -35,16 +35,19 @@
               </div>
               <header class="app-header">
                 <div class="app-brand"><i>O</i><span>OnyxClaw</span></div>
-                <div class="status-pill" id="global-status">
-                  <span class="status-dot"></span>
-                  <span id="global-status-text">尚未连接</span>
+                <div class="app-header-actions">
+                  <div class="status-pill" id="global-status">
+                    <span class="status-dot"></span>
+                    <span id="global-status-text">尚未连接</span>
+                  </div>
+                  <button class="reset-user" id="reset-user" aria-label="清理并重置为新用户">重置新用户</button>
                 </div>
               </header>
 
               <nav class="tabs" aria-label="新用户设置步骤">
                 <button class="tab active" data-step="mode" disabled><b>1</b><span>龙虾模式</span></button>
                 <button class="tab" data-step="soul" disabled><b>2</b><span>性格设定</span></button>
-                <button class="tab" data-step="chat" disabled><b>3</b><span>对话</span></button>
+                <button class="tab" data-step="chat" disabled><b>3</b><span>对话龙虾</span></button>
               </nav>
 
               <div class="app-content">
@@ -85,7 +88,7 @@
 
                 <section class="panel chat-panel" id="panel-chat">
                   <div class="mobile-panel-head chat-head">
-                    <div><p>STEP 03 · CHANNEL</p><h2>和龙虾对话</h2></div>
+                    <div><p>STEP 03 · CHANNEL</p><h2>对话龙虾</h2></div>
                     <button class="icon-button" id="chat-stop" aria-label="断开并清理">×</button>
                   </div>
                   <span class="chat-state" id="chat-state">等待连接</span>

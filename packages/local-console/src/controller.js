@@ -123,6 +123,24 @@ export class LocalConsoleController {
     return this.getStatus();
   }
 
+  async resetNewUser() {
+    await this.stopLobsterMode();
+    this.#soulBackup = undefined;
+    this.#helloResponse = undefined;
+    this.#helloPromise = undefined;
+    this.#chatRunning = false;
+    this.#status = {
+      ...this.#status,
+      mode: "idle",
+      currentStep: "mode",
+      soulConfirmed: false,
+      connectionId: null,
+      gateway: null,
+      error: null,
+    };
+    return this.getStatus();
+  }
+
   getSoul() {
     return this.#driver.readSoul();
   }

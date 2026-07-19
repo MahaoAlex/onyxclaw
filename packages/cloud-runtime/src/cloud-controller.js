@@ -166,6 +166,10 @@ export class CloudConsoleController {
     return this.getStatus();
   }
 
+  resetNewUser() {
+    return this.stopLobsterMode();
+  }
+
   async sendMessage(text) {
     if (this.#status.mode !== "connected" || !this.#status.soulConfirmed) {
       throw new Error("云端 OpenClaw 尚未就绪");

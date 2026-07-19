@@ -73,6 +73,9 @@ export function createLocalConsoleServer({
     if (request.method === "POST" && pathname === "/api/lobster/stop") {
       return sendJson(response, 200, await controller.stopLobsterMode());
     }
+    if (request.method === "POST" && pathname === "/api/session/reset") {
+      return sendJson(response, 200, await controller.resetNewUser());
+    }
     if (request.method === "GET" && pathname === "/api/soul") {
       return sendJson(response, 200, await controller.getSoul());
     }

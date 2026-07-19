@@ -9,6 +9,7 @@ function createController() {
     getStatus: () => ({ mode: "idle", instanceId: "local-mac" }),
     startLobsterMode: async () => ({ mode: "connected", connectionId: "c-1" }),
     stopLobsterMode: async () => ({ mode: "idle" }),
+    resetNewUser: async () => ({ mode: "idle", currentStep: "mode", soulConfirmed: false }),
     getSoul: async () => ({ content: "# Soul\n", sha256: "abc", size: 7 }),
     saveSoul: async (content) => ({ content, sha256: "def", size: content.length }),
     restoreSoul: async () => ({ content: "# Original\n", sha256: "old", size: 11 }),
@@ -164,6 +165,33 @@ test("ordinary BFF and OpenClaw calls do not enter Sandbox Service telemetry", a
   assert.deepEqual(observation.objects, []);
 });
 
+test("session reset returns the BFF to new-user state", async (t) => {
+  let resetCalls = 0;
+  const controller = createController();
+  controller.resetNewUser = async () => {
+    resetCalls += 1;
+    return {
+      mode: "idle",
+      currentStep: "mode",
+      soulConfirmed: false,
+      sandboxId: null,
+      connectionId: null,
+    };
+  };
+  const app = createLocalConsoleServer({ controller, host: "127.0.0.1", port: 0 });
+  await app.start();
+  t.after(() => app.stop({ cleanup: false }));
+
+  const reset = await fetch(`${app.url}/api/session/reset`, {
+    method: "POST",
+    headers: { "x-onyxclaw-request": "local-ui" },
+  }).then((response) => response.json());
+
+  assert.equal(resetCalls, 1);
+  assert.equal(reset.mode, "idle");
+  assert.equal(reset.soulConfirmed, false);
+});
+
 test("web UI exposes a phone workflow plus architecture and API observability", async (t) => {
   const app = createLocalConsoleServer({
     controller: createController(),
@@ -175,11 +203,14 @@ test("web UI exposes a phone workflow plus architecture and API observability", 
 
   const response = await fetch(app.url);
   const html = await response.text();
+  const styles = await fetch(`${app.url}/styles.css`).then((result) => result.text());
 
   assert.equal(response.status, 200);
   assert.match(html, /龙虾模式/);
   assert.match(html, /性格设定/);
-  assert.match(html, /和龙虾对话/);
+  assert.match(html, /对话龙虾/);
+  assert.match(html, /id="reset-user"/);
+  assert.match(html, /重置新用户/);
   assert.match(html, /确认性格并继续/);
   assert.match(html, /data-step="soul"/);
   assert.match(html, /class="phone-frame"/);
@@ -190,4 +221,7 @@ test("web UI exposes a phone workflow plus architecture and API observability", 
   assert.match(html, /id="resource-grid"/);
   assert.doesNotMatch(html, /创建 Sandbox/);
   assert.match(html, /src="\/app\.js"/);
+  assert.match(styles, /body\s*\{[\s\S]*?overflow:\s*hidden/);
+  assert.match(styles, /\.workbench\s*\{[\s\S]*?height:\s*calc\(100vh - 84px\)/);
+  assert.match(styles, /\.composer textarea\s*\{[\s\S]*?caret-color:\s*var\(--coral-dark\)/);
 });

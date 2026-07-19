@@ -140,6 +140,23 @@ test("stopping an idle console does not restart OpenClaw", async () => {
   assert.deepEqual(calls, []);
 });
 
+test("resetNewUser clears confirmed personality and one-time hello state", async () => {
+  const { controller, calls } = fixture();
+  await controller.startLobsterMode();
+  await controller.confirmSoul("warm and concise\n");
+  await controller.sayHello();
+
+  const reset = await controller.resetNewUser();
+
+  assert.equal(reset.mode, "idle");
+  assert.equal(reset.currentStep, "mode");
+  assert.equal(reset.soulConfirmed, false);
+  assert.deepEqual(calls.slice(-2), [["disable"], ["simulator.stop"]]);
+
+  const restarted = await controller.startLobsterMode();
+  assert.equal(restarted.currentStep, "soul");
+});
+
 test("failed lobster mode startup disables the test channel and stops simulator", async () => {
   const { controller, calls } = fixture();
   controller.getStatus();

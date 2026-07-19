@@ -76,3 +76,16 @@ test("stop kills the cloud Sandbox and resets the serial flow", async () => {
   assert.equal(status.currentStep, "mode");
   assert.deepEqual(calls.at(-1), ["kill", "sandbox-1"]);
 });
+
+test("resetNewUser uses cloud cleanup and returns to onboarding", async () => {
+  const { calls, controller } = fixture();
+  await controller.startLobsterMode();
+  await controller.confirmSoul("# Confirmed");
+
+  const reset = await controller.resetNewUser();
+
+  assert.equal(reset.mode, "idle");
+  assert.equal(reset.currentStep, "mode");
+  assert.equal(reset.soulConfirmed, false);
+  assert.deepEqual(calls.at(-1), ["kill", "sandbox-1"]);
+});
