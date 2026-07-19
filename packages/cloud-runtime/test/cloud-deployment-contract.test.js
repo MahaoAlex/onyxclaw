@@ -21,7 +21,13 @@ test("ACS manifest keeps secrets external and exposes UI plus Channel ports", as
   assert.match(manifest, /kind: Deployment/);
   assert.match(manifest, /image: \{\{IMAGE\}\}/);
   assert.match(manifest, /secretKeyRef:/);
+  assert.match(manifest, /imagePullSecrets:\s*\n\s*- name: onyxclaw-acr-pull/);
   assert.match(manifest, /name: ALICLOUD_ACS_E2B_API_KEY/);
+  assert.match(manifest, /name: E2B_ROUTE_DOMAIN/);
+  assert.match(
+    manifest,
+    /value: sandbox-gateway\.sandbox-system\.svc\.cluster\.local:7788/,
+  );
   assert.match(manifest, /name: ALICLOUD_ACS_MODEL_API_KEY/);
   assert.match(manifest, /containerPort: 3000/);
   assert.match(manifest, /containerPort: 18890/);

@@ -1,6 +1,6 @@
 # OnyxClaw：E2B 兼容 Sandbox 端到端验证方案
 
-> 状态：本机 macOS 验证已完成；阿里云 ACS 基础设施与 E2B create/commands/files/kill 已通过，云端 OpenClaw 对话链路待实施
+> 状态：本机 macOS 与阿里云 ACS 云端主链路均已跑通；connect/pause/resume 和差异测试待实施
 > 日期：2026-07-19
 > 输入需求：[init.md](./init.md)
 > 本版调整：补充本机/云端双轨范围、本机验收矩阵和 Phase 1 串行流程
@@ -525,8 +525,8 @@ E2B Files/Commands API、云端 WSS/TLS、Docker 部署、差异测试、webhook
 
 ### 10.4 阿里云 ACS 云端验收进度
 
-2026-07-19 已通过 IaC 创建真实 ACS 集群和两副本预热池，并使用固定 digest 的
-OnyxClaw v0.1.2 镜像完成以下验证：
+2026-07-19 已通过 IaC 创建真实 ACS 集群和预热池，使用固定 digest 的 OnyxClaw
+v0.1.2 Sandbox 镜像及 `app-v0.1.0` APP 镜像完成以下验证：
 
 | 云端验收项 | 结果 | 说明 |
 | --- | --- | --- |
@@ -536,12 +536,21 @@ OnyxClaw v0.1.2 镜像完成以下验证：
 | `commands.run` | 通过 | envd 以 root 运行，命令显式使用 OpenClaw 的 node 用户 |
 | `files.write/read` | 通过 | node 用户写读临时文件内容一致 |
 | Secret 边界 | 通过 | smoke 从 `e2b-key-store` 读取转换后的运行时 Key，不输出明文 |
-| OpenClaw bootstrap 与 Channel 对话 | 待实施 | 需要云端 Adapter、配置/SOUL 写入和 Channel 就绪 Saga |
+| APP 容器与 ClusterIP Service | 通过 | APP 从杭州 ACR 按 digest 拉取，在同一 ACS 集群内运行 |
+| Provider/Secret 配置 | 通过 | E2B、MiniMax 和 Channel 凭据由 Kubernetes Secret 注入，不进入镜像和 Git |
+| 新用户串行流程 | 通过 | 领取暖池 Sandbox → 确认 Soul → 进入聊天，服务端门禁生效 |
+| OpenClaw bootstrap | 通过 | E2B Files 写入配置/Soul，Gateway 与 Channel 约 8 秒就绪 |
+| MiniMax 首次问候 | 通过 | `minimax/MiniMax-M3` 经自定义 Channel 回复，实测约 13.7 秒 |
+| MiniMax 普通文字对话 | 通过 | 回复符合 Soul 性格，实测约 2.4 秒 |
+| Sandbox 清理 | 通过 | APP stop 调用 E2B kill，控制台回到 `idle/mode` |
 | connect/pause/resume | 待实施 | 纳入完整云端生命周期 E2E |
 
 可重复 smoke 位于 `iac/alicloud-acs/scripts/e2b-smoke.py`。本轮发现并修复了
 `/run/e2b` 权限和 envd 非 root 导致的进程创建失败；账户余额不足产生的失败 Sandbox
-不会自动重试，需要删除失败资源，由 SandboxSet 控制器重新创建。
+不会自动重试，需要删除失败资源，由 SandboxSet 控制器重新创建。APP 实测还发现
+Manager 返回的 `agents-vpc.infra` 地址不能在 APP Pod 内解析，因此部署清单必须设置
+`E2B_ROUTE_DOMAIN=sandbox-gateway.sandbox-system.svc.cluster.local:7788`，将 Files 和
+Commands 请求路由到集群内 Sandbox Gateway。该配置属于 provider 网络参数，不是密钥。
 
 ## 11. 分阶段交付
 
@@ -558,9 +567,9 @@ OnyxClaw v0.1.2 镜像完成以下验证：
 本机先导验证已于 2026-07-19 完成：最小 Channel Plugin、WebSocket Simulator、
 session 自动重连、`SOUL.md` 写入/恢复、Gateway restart/probe、token 轮换和两轮
 消息均已在 macOS OpenClaw 2026.6.11 上自动跑通。该结果验证了应用层测试夹具，
-不等同于云端 Phase 0 完成。2026-07-19 已在阿里云 ACS 用真实 E2B SDK 跑通
-create、commands、files 和 kill；pause/connect/resume 以及 OpenClaw Channel 对话仍需
-由后续云端 Adapter 和 bootstrap Saga 完成。
+不等同于全部云端生命周期验收完成。2026-07-19 已在阿里云 ACS 用真实 E2B SDK
+跑通 create、commands、files、OpenClaw bootstrap、自定义 Channel、MiniMax 对话和
+kill；pause/connect/resume 仍需后续补充。
 
 ### Phase 1：最小 Web 控制台
 
@@ -573,8 +582,9 @@ create、commands、files 和 kill；pause/connect/resume 以及 OpenClaw Channe
 本机子阶段已于 2026-07-19 跑通：浏览器中的三个页签可管理当前 macOS 已安装的
 OpenClaw，按“龙虾模式 → 性格确认 → 对话”串行执行，完成 Channel 生命周期、
 `SOUL.md` 编辑/校验/恢复、服务端性格门禁、一次性性格问候和真实文字对话。
-本机子阶段不创建 Sandbox；上面列出的 Docker 云端部署、E2B 生命周期和差异测试
-仍属于后续云端 Phase 1。
+同日云端子阶段也已将 APP 以容器部署到 ACS，并通过同集群私网完成新用户领取
+Sandbox、Soul 确认、OpenClaw/Channel 就绪、MiniMax 首次问候、普通文字对话和清理。
+尚未完成的 Phase 1 项是 connect/pause/resume、JSON 报告下载和参考实现差异测试。
 
 ### Phase 2：按验证需求扩展
 

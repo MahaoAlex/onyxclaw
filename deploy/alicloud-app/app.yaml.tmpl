@@ -15,6 +15,8 @@ spec:
         alibabacloud.com/acs: "true"
     spec:
       automountServiceAccountToken: false
+      imagePullSecrets:
+        - name: onyxclaw-acr-pull
       containers:
         - name: app
           image: {{IMAGE}}
@@ -25,6 +27,11 @@ spec:
             - name: channel
               containerPort: 18890
           env:
+            # Manager returns an agents-vpc.infra route that is not resolvable
+            # from an ACS workload. Route envd traffic through the in-cluster
+            # Sandbox Gateway while retaining the claimed Sandbox credentials.
+            - name: E2B_ROUTE_DOMAIN
+              value: sandbox-gateway.sandbox-system.svc.cluster.local:7788
             - name: ALICLOUD_ACS_E2B_API_KEY
               valueFrom:
                 secretKeyRef:
