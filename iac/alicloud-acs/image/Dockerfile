@@ -3,6 +3,7 @@ FROM ${OPENCLAW_IMAGE}
 
 USER root
 RUN test -x /bin/bash \
+    && command -v setpriv \
     && command -v cp \
     && command -v mv \
     && command -v mkdir \
@@ -15,7 +16,7 @@ RUN chmod 0755 /opt/onyxclaw/bin/entrypoint.sh \
     && npm install --omit=dev --omit=peer --ignore-scripts \
     && ln -s /app /opt/onyxclaw/channel/node_modules/openclaw
 
-USER node
+USER root
 ENV HOME=/home/node \
     OPENCLAW_HOME=/home/node \
     OPENCLAW_STATE_DIR=/home/node/.openclaw \

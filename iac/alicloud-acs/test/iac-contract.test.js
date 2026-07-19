@@ -111,9 +111,12 @@ test("derived OpenClaw image contains ACS tools and waits for runtime bootstrap"
   assert.match(dockerfile, /--omit=peer/);
   assert.match(dockerfile, /node_modules\/openclaw/);
   assert.match(dockerfile, /install -d[^\n]*-o node -g node \/run\/e2b/);
-  assert.match(dockerfile, /USER node/);
+  assert.match(dockerfile, /USER root\s*\nENV HOME=/);
   assert.match(entrypoint, /OPENCLAW_CONFIG_PATH/);
   assert.match(entrypoint, /SOUL\.md/);
+  assert.match(entrypoint, /install -d[^\n]*-o node -g node/);
+  assert.match(entrypoint, /chown node:node/);
+  assert.match(entrypoint, /setpriv --reuid=node --regid=node --init-groups/);
   assert.match(entrypoint, /gateway.*--bind.*lan/s);
 });
 
