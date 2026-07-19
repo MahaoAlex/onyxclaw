@@ -1,0 +1,5 @@
+node_modules/
+artifacts/
+*.log
+*.swp
+.DS_Store

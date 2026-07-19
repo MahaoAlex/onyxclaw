@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light" />
+    <title>OnyxClaw 本机控制台</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="ambient ambient-one"></div>
+    <div class="ambient ambient-two"></div>
+    <main class="shell">
+      <header class="topbar">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">◈</div>
+          <div>
+            <div class="brand-name">ONYXCLAW</div>
+            <div class="brand-subtitle">本机 OpenClaw 控制台</div>
+          </div>
+        </div>
+        <div class="status-pill" id="global-status">
+          <span class="status-dot"></span>
+          <span id="global-status-text">尚未连接</span>
+        </div>
+      </header>
+
+      <section class="hero">
+        <div>
+          <p class="eyebrow">LOCAL PHASE 1</p>
+          <h1>让你的本机 OpenClaw<br /><span>进入龙虾模式。</span></h1>
+          <p class="hero-copy">
+            在一个安静的控制台里完成 Channel 连接、性格设定和实时对话。
+            所有操作只作用于这台 Mac 上已经安装的 OpenClaw。
+          </p>
+        </div>
+        <div class="hero-orbit" aria-hidden="true">
+          <div class="orbit-ring"></div>
+          <div class="lobster-glyph">⌁</div>
+          <div class="orbit-label">LOCAL<br />ONLY</div>
+        </div>
+      </section>
+
+      <nav class="tabs" aria-label="新用户设置步骤">
+        <button class="tab active" data-step="mode" disabled>
+          <span>01</span> 龙虾模式
+        </button>
+        <button class="tab" data-step="soul" disabled>
+          <span>02</span> 性格设定
+        </button>
+        <button class="tab" data-step="chat" disabled>
+          <span>03</span> 和龙虾对话
+        </button>
+      </nav>
+
+      <section class="panel active" id="panel-mode">
+        <div class="panel-grid">
+          <article class="card primary-card">
+            <p class="card-kicker">CONNECTION</p>
+            <h2>连接本机 OpenClaw</h2>
+            <p class="muted">
+              控制台将检查 Plugin、启动本地 Channel Simulator、配置 Channel，
+              并重启 Gateway 完成连接。首次启动通常需要约 40 秒。
+            </p>
+            <div class="mode-actions">
+              <button class="button button-primary" id="start-mode">
+                <span class="button-icon">↗</span> 进入龙虾模式
+              </button>
+              <button class="button button-quiet" id="stop-mode" disabled>
+                断开并清理
+              </button>
+            </div>
+            <div class="notice" id="mode-notice" hidden></div>
+          </article>
+
+          <article class="card telemetry-card">
+            <div class="telemetry-head">
+              <p class="card-kicker">TELEMETRY</p>
+              <span class="live-label"><i></i> LIVE</span>
+            </div>
+            <dl class="telemetry-list">
+              <div><dt>运行模式</dt><dd id="metric-mode">IDLE</dd></div>
+              <div><dt>实例</dt><dd id="metric-instance">local-mac</dd></div>
+              <div><dt>Gateway</dt><dd id="metric-gateway">待检查</dd></div>
+              <div><dt>Connection ID</dt><dd id="metric-connection">—</dd></div>
+            </dl>
+          </article>
+        </div>
+
+        <article class="flow-card">
+          <p class="card-kicker">LOCAL FLOW</p>
+          <div class="flow">
+            <div class="flow-step"><b>01</b><span>浏览器 UI</span><small>当前页面</small></div>
+            <i>→</i>
+            <div class="flow-step"><b>02</b><span>本机 BFF</span><small>Loopback API</small></div>
+            <i>→</i>
+            <div class="flow-step"><b>03</b><span>Channel Plugin</span><small>WebSocket</small></div>
+            <i>→</i>
+            <div class="flow-step"><b>04</b><span>OpenClaw</span><small>Local Gateway</small></div>
+          </div>
+        </article>
+      </section>
+
+      <section class="panel" id="panel-soul">
+        <article class="card editor-card">
+          <div class="editor-head">
+            <div>
+              <p class="card-kicker">~/.openclaw/workspace/SOUL.md</p>
+              <h2>塑造龙虾的性格</h2>
+            </div>
+            <button class="button button-quiet" id="reload-soul">重新读取</button>
+          </div>
+          <textarea id="soul-editor" spellcheck="false" placeholder="正在读取 SOUL.md…"></textarea>
+          <div class="editor-footer">
+            <div class="file-meta">
+              <span id="soul-size">— bytes</span>
+              <span id="soul-hash">SHA-256 —</span>
+            </div>
+            <div class="editor-actions">
+              <button class="button button-quiet" id="restore-soul">恢复本次编辑前版本</button>
+              <button class="button button-primary" id="confirm-soul">确认性格并继续</button>
+            </div>
+          </div>
+          <div class="notice" id="soul-notice" hidden></div>
+        </article>
+      </section>
+
+      <section class="panel" id="panel-chat">
+        <article class="card chat-card">
+          <div class="chat-head">
+            <div>
+              <p class="card-kicker">CHANNEL SESSION</p>
+              <h2>和龙虾对话</h2>
+            </div>
+            <div class="chat-head-actions">
+              <span class="chat-state" id="chat-state">等待连接</span>
+              <button class="button button-quiet compact" id="chat-stop">断开并清理</button>
+            </div>
+          </div>
+          <div class="messages" id="messages">
+            <div class="empty-chat">
+              <div>⌁</div>
+              <p>进入龙虾模式后，在这里发送第一条消息。</p>
+            </div>
+          </div>
+          <form class="composer" id="chat-form">
+            <textarea id="chat-input" rows="1" placeholder="输入消息，Enter 发送…" disabled></textarea>
+            <button class="send-button" type="submit" disabled aria-label="发送消息">↑</button>
+          </form>
+          <p class="composer-hint">Shift + Enter 换行 · 消息经本机 Channel 传递</p>
+        </article>
+      </section>
+    </main>
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>

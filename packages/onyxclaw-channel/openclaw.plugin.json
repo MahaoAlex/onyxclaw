@@ -1,0 +1,32 @@
+{
+  "id": "onyxclaw",
+  "kind": "channel",
+  "channels": ["onyxclaw"],
+  "name": "OnyxClaw",
+  "description": "Phase 0 channel for validating E2B-compatible sandboxes",
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {}
+  },
+  "channelConfigs": {
+    "onyxclaw": {
+      "schema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "enabled": { "type": "boolean" },
+          "platformUrl": { "type": "string" },
+          "bootstrapToken": { "type": "string" },
+          "instanceId": { "type": "string" }
+        }
+      },
+      "uiHints": {
+        "bootstrapToken": {
+          "label": "Bootstrap token",
+          "sensitive": true
+        }
+      }
+    }
+  }
+}

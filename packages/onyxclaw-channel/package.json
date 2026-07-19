@@ -1,0 +1,20 @@
+{
+  "name": "@onyxclaw/channel",
+  "version": "0.1.0",
+  "type": "module",
+  "dependencies": {
+    "ws": "^8.21.0"
+  },
+  "peerDependencies": {
+    "openclaw": ">=2026.6.11"
+  },
+  "openclaw": {
+    "extensions": ["./index.js"],
+    "setupEntry": "./setup-entry.js",
+    "channel": {
+      "id": "onyxclaw",
+      "label": "OnyxClaw",
+      "blurb": "Phase 0 channel for validating E2B-compatible sandboxes."
+    }
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "name": "onyxclaw-phase0",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test",
+    "test:unit": "node --test packages/*/test/*.test.js",
+    "test:local": "node --test test/local/*.test.js",
+    "phase0:local": "node packages/test-orchestrator/src/local-e2e.js",
+    "phase1:local": "node packages/local-console/src/index.js",
+    "phase1:smoke": "node packages/local-console/src/smoke.js",
+    "dev": "npm run phase1:local"
+  },
+  "engines": {
+    "node": ">=22.19.0"
+  },
+  "devDependencies": {
+    "openclaw": "^2026.6.11",
+    "ws": "^8.21.0"
+  }
+}
