@@ -30,6 +30,7 @@ jobs:
           image="ghcr.io/${owner}/onyxclaw-app"
           artifact="onyxclaw-app-${GITHUB_REF_NAME}-linux-amd64-docker"
           {
+            echo "tag=${GITHUB_REF_NAME}"
             echo "image_ref=${image}:${GITHUB_REF_NAME}"
             echo "artifact=${artifact}"
           } >> "${GITHUB_OUTPUT}"
@@ -65,7 +66,7 @@ jobs:
         env:
           IMAGE_DIGEST: ${{ steps.build.outputs.digest }}
           IMAGE_REF: ${{ steps.release.outputs.image_ref }}
-          RELEASE_TAG: ${{ GITHUB_REF_NAME }}
+          RELEASE_TAG: ${{ steps.release.outputs.tag }}
           ARCHIVE_NAME: ${{ steps.release.outputs.artifact }}
         run: |
           set -euo pipefail
@@ -127,7 +128,7 @@ jobs:
       - name: Create or refresh GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          RELEASE_TAG: ${{ GITHUB_REF_NAME }}
+          RELEASE_TAG: ${{ steps.release.outputs.tag }}
         shell: bash
         run: |
           set -euo pipefail
