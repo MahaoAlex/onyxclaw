@@ -36,7 +36,7 @@ jobs:
 
           owner="${GITHUB_REPOSITORY_OWNER,,}"
           image="ghcr.io/${owner}/onyxclaw-openclaw"
-          artifact="onyxclaw-openclaw-${release_tag}-linux-amd64"
+          artifact="onyxclaw-openclaw-${release_tag}-linux-amd64-docker"
           {
             echo "tag=${release_tag}"
             echo "image=${image}"
@@ -54,7 +54,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4.0.0
 
-      - name: Build once, push to GHCR, and export OCI archive
+      - name: Build once, push to GHCR, and export Docker archive
         id: build
         uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
         with:
@@ -69,7 +69,7 @@ jobs:
             org.opencontainers.image.version=${{ steps.release.outputs.tag }}
           outputs: |
             type=registry,name=${{ steps.release.outputs.image_ref }},push=true
-            type=oci,dest=/tmp/${{ steps.release.outputs.artifact }}.oci.tar
+            type=docker,dest=/tmp/${{ steps.release.outputs.artifact }}.tar
           cache-from: type=gha
           cache-to: type=gha,mode=max
           provenance: mode=max
@@ -90,10 +90,14 @@ jobs:
           fi
 
           mkdir -p release
-          gzip -9 < "/tmp/${ARCHIVE_NAME}.oci.tar" > "release/${ARCHIVE_NAME}.oci.tar.gz"
-          archive_size="$(stat -c '%s' "release/${ARCHIVE_NAME}.oci.tar.gz")"
+          # Docker-format tarball (manifest.json + repositories + layer tarballs) is
+          # directly loadable on any Docker Engine >= 24.0 via `docker load`. Multi-cloud
+          # environments can mirror the archive to ACR / SWR / GCR / ECR without
+          # having to re-tag or re-pull from GHCR.
+          gzip -9 < "/tmp/${ARCHIVE_NAME}.tar" > "release/${ARCHIVE_NAME}.tar.gz"
+          archive_size="$(stat -c '%s' "release/${ARCHIVE_NAME}.tar.gz")"
           if (( archive_size >= 2147483648 )); then
-            echo "Compressed OCI archive exceeds GitHub's 2 GiB per-asset limit." >&2
+            echo "Compressed Docker archive exceeds GitHub's 2 GiB per-asset limit." >&2
             exit 1
           fi
 
@@ -105,10 +109,11 @@ jobs:
           immutable_image=${IMAGE_REF%@*}@${IMAGE_DIGEST}
           platform=linux/amd64
           source_commit=${GITHUB_SHA}
+          loadable_by=Docker Engine 24.x (docker load)
           EOF
           (
             cd release
-            sha256sum "${ARCHIVE_NAME}.oci.tar.gz" image-manifest.txt image-reference.txt > checksums.sha256
+            sha256sum "${ARCHIVE_NAME}.tar.gz" image-manifest.txt image-reference.txt > checksums.sha256
           )
           cat > release/release-notes.md <<EOF
           ## OnyxClaw OpenClaw image ${RELEASE_TAG}
@@ -121,8 +126,17 @@ jobs:
 
           \`${IMAGE_REF%@*}@${IMAGE_DIGEST}\`
 
-          The OCI archive is the offline copy. Verify it with \`checksums.sha256\`, decompress it,
-          and import or mirror it with an OCI-compatible tool such as Podman or Skopeo.
+          The attached \`${ARCHIVE_NAME}.tar.gz\` is a Docker-format archive
+          (manifest.json + layer tarballs) that loads on any Docker Engine 24.x host:
+
+          \`\`\`bash
+          docker load -i ${ARCHIVE_NAME}.tar.gz
+          docker images --digests | grep onyxclaw-openclaw
+          \`\`\`
+
+          Mirror to other registries with \`docker tag\` + \`docker push\`, or use
+          Skopeo (\`skopeo copy docker-archive:${ARCHIVE_NAME}.tar.gz ...\`) for
+          registries that do not accept plain \`docker push\`.
           EOF
 
       - name: Create or refresh GitHub Release
@@ -150,5 +164,5 @@ jobs:
             echo
             echo '\`${{ steps.release.outputs.image_ref }}@${{ steps.build.outputs.digest }}\`'
             echo
-            echo "The matching OCI archive and checksums are attached to GitHub Release ${{ steps.release.outputs.tag }}."
+            echo "The matching Docker-format archive (\`${ARCHIVE_NAME}.tar.gz\`) and checksums are attached to GitHub Release ${{ steps.release.outputs.tag }}."
           } >> "${GITHUB_STEP_SUMMARY}"
