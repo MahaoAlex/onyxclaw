@@ -1,9 +1,39 @@
 import { resolveLandingView } from "./ui-state.js";
 import { architectureStateFor, formatDuration } from "./observability-ui.js";
+import { calculateViewportFit } from "./viewport-fit.js";
 
 if ("scrollRestoration" in history) history.scrollRestoration = "manual";
 window.scrollTo(0, 0);
 requestAnimationFrame(() => window.scrollTo(0, 0));
+
+const workspace = document.querySelector(".workspace-shell");
+let fitFrame;
+
+function fitWorkspaceToViewport() {
+  workspace.classList.remove("viewport-fitted");
+  workspace.style.removeProperty("left");
+  workspace.style.removeProperty("transform");
+  const contentWidth = workspace.offsetWidth;
+  const contentHeight = Math.max(workspace.scrollHeight, workspace.offsetHeight);
+  const fit = calculateViewportFit({
+    viewportWidth: window.innerWidth,
+    viewportHeight: window.innerHeight,
+    contentWidth,
+    contentHeight,
+  });
+  if (!fit.enabled) return;
+  workspace.classList.add("viewport-fitted");
+  workspace.style.left = `${fit.left}px`;
+  workspace.style.transform = `scale(${fit.scale})`;
+  window.scrollTo(0, 0);
+}
+
+function scheduleViewportFit() {
+  cancelAnimationFrame(fitFrame);
+  fitFrame = requestAnimationFrame(fitWorkspaceToViewport);
+}
+
+window.addEventListener("resize", scheduleViewportFit);
 
 const elements = {
   status: document.querySelector("#global-status"),
@@ -398,4 +428,5 @@ elements.chatStop.addEventListener("click", async () => {
 });
 
 await Promise.all([refreshStatus(), loadSoul(), refreshObservability()]);
+scheduleViewportFit();
 setInterval(() => void refreshObservability(), 750);
