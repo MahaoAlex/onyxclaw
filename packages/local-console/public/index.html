@@ -44,6 +44,21 @@
                 </div>
               </header>
 
+              <section class="runtime-strip" id="runtime-strip" hidden aria-label="ACS Sandbox 与 Channel 运行时状态">
+                <div class="runtime-strip-row">
+                  <span class="runtime-label">SANDBOX</span>
+                  <span class="runtime-value" id="runtime-sandbox-id">—</span>
+                </div>
+                <div class="runtime-strip-row">
+                  <span class="runtime-label">RUNTIME</span>
+                  <span class="runtime-value" id="runtime-instance-id">—</span>
+                </div>
+                <div class="runtime-strip-row">
+                  <span class="runtime-label">CONNECTION</span>
+                  <span class="runtime-value" id="runtime-connection-id">—</span>
+                </div>
+              </section>
+
               <nav class="tabs" aria-label="新用户设置步骤">
                 <button class="tab active" data-step="mode" disabled><b>1</b><span>龙虾模式</span></button>
                 <button class="tab" data-step="soul" disabled><b>2</b><span>性格设定</span></button>
@@ -58,27 +73,7 @@
                     <h1>进入<br /><em>龙虾模式</em></h1>
                     <p class="mobile-copy" id="mode-copy">连接这台 Mac 上的 OpenClaw，创建一只拥有专属性格的智能龙虾。</p>
                   </div>
-                  <div class="cloud-entry" id="cloud-entry" hidden>
-                    <div class="user-type-switch" role="group" aria-label="云端用户类型">
-                      <button class="active" type="button" data-user-type="new">全新用户</button>
-                      <button type="button" data-user-type="existing">已有 Sandbox</button>
-                    </div>
-                    <div class="existing-sandbox-fields" id="existing-sandbox-fields" hidden>
-                      <input id="sandbox-id" autocomplete="off" placeholder="Sandbox ID（必填）" />
-                      <input id="instance-id" autocomplete="off" placeholder="OpenClaw Instance ID（可选）" />
-                    </div>
-                  </div>
-                  <div class="mode-actions">
-                    <button class="button button-primary" id="start-mode">进入龙虾模式 <span>→</span></button>
-                    <button class="button button-quiet" id="stop-mode" disabled>断开并清理</button>
-                  </div>
                   <div class="notice" id="mode-notice" hidden></div>
-                  <dl class="mini-metrics">
-                    <div><dt>MODE</dt><dd id="metric-mode">IDLE</dd></div>
-                    <div><dt id="metric-primary-label">INSTANCE</dt><dd id="metric-instance">local-mac</dd></div>
-                    <div><dt id="metric-secondary-label">GATEWAY</dt><dd id="metric-gateway">待检查</dd></div>
-                    <div><dt>CONNECTION</dt><dd id="metric-connection">—</dd></div>
-                  </dl>
                 </section>
 
                 <section class="panel" id="panel-soul">
@@ -99,7 +94,6 @@
                 <section class="panel chat-panel" id="panel-chat">
                   <div class="mobile-panel-head chat-head">
                     <div><p>STEP 03 · CHANNEL</p><h2>对话龙虾</h2></div>
-                    <button class="icon-button" id="chat-stop" aria-label="断开并清理">×</button>
                   </div>
                   <span class="chat-state" id="chat-state">等待连接</span>
                   <div class="messages" id="messages">
@@ -117,54 +111,92 @@
         </section>
 
         <section class="service-workbench" aria-label="后端服务可观测工作台">
-          <article class="console-card architecture-card">
+          <div class="observability-top">
+            <article class="console-card cluster-card" id="cluster-card" hidden>
+              <header class="card-header">
+                <div class="section-label compact-label">
+                  <span>02</span><div><b>ACS CLUSTER</b><small>Provider runtime context</small></div>
+                </div>
+                <span class="calls-count" id="cluster-region-chip">—</span>
+              </header>
+              <dl class="cluster-grid">
+                <dt>Provider</dt><dd id="cluster-provider">—</dd>
+                <dt>Region</dt><dd id="cluster-region">—</dd>
+                <dt>Template</dt><dd id="cluster-template">—</dd>
+                <dt>E2B Host</dt><dd id="cluster-e2b-host">—</dd>
+                <dt>Gateway Port</dt><dd id="cluster-gateway-port">—</dd>
+                <dt>Protocol</dt><dd id="cluster-protocol">—</dd>
+              </dl>
+              <ul class="capability-list" id="cluster-capabilities"></ul>
+            </article>
+
+            <article class="console-card architecture-card">
+              <header class="card-header">
+                <div class="section-label compact-label">
+                  <span>03</span><div><b>SYSTEM ARCHITECTURE</b><small>Live request topology</small></div>
+                </div>
+                <div class="live-badge"><i></i> LIVE</div>
+              </header>
+
+              <svg id="architecture-map" class="architecture-map" viewBox="0 0 900 360" role="img" aria-labelledby="architecture-title">
+                <title id="architecture-title">OnyxClaw APP 到 ACS Sandbox 和 MiniMax 的系统架构</title>
+                <defs>
+                  <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" /></marker>
+                  <filter id="node-glow"><feGaussianBlur stdDeviation="4" result="blur" /><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+                </defs>
+                <g class="architecture-edges">
+                  <path data-edge="app-bff" d="M170 180 H250" />
+                  <path data-edge="bff-e2b" d="M380 165 C420 130 430 105 475 94" />
+                  <path data-edge="e2b-sandbox" d="M605 90 H690" />
+                  <path data-edge="bff-openclaw" d="M380 195 C420 235 430 262 475 270" />
+                  <path data-edge="sandbox-openclaw" d="M755 130 C750 210 680 270 605 270" />
+                  <path data-edge="openclaw-model" d="M605 270 H690" />
+                </g>
+                <g class="architecture-node" data-node="app" transform="translate(30 140)"><rect width="140" height="80" rx="18"/><circle cx="25" cy="25" r="7"/><text x="22" y="50">WEB APP</text><text class="node-sub" x="22" y="68">Mobile UI</text></g>
+                <g class="architecture-node" data-node="bff" transform="translate(250 140)"><rect width="130" height="80" rx="18"/><circle cx="25" cy="25" r="7"/><text x="22" y="50">NODE BFF</text><text class="node-sub" x="22" y="68">API / Saga</text></g>
+                <g class="architecture-node" data-node="e2b" transform="translate(475 50)"><rect width="130" height="80" rx="18"/><circle cx="25" cy="25" r="7"/><text x="22" y="50">E2B API</text><text class="node-sub" x="22" y="68">ACS Manager</text></g>
+                <g class="architecture-node" data-node="sandbox" transform="translate(690 50)"><rect width="170" height="80" rx="18"/><circle cx="25" cy="25" r="7"/><text x="22" y="50">SANDBOX</text><text class="node-sub" x="22" y="68">OpenClaw runtime</text></g>
+                <g class="architecture-node" data-node="openclaw" transform="translate(475 230)"><rect width="130" height="80" rx="18"/><circle cx="25" cy="25" r="7"/><text x="22" y="50">CHANNEL</text><text class="node-sub" x="22" y="68">WebSocket</text></g>
+                <g class="architecture-node" data-node="model" transform="translate(690 230)"><rect width="170" height="80" rx="18"/><circle cx="25" cy="25" r="7"/><text x="22" y="50">MINIMAX</text><text class="node-sub" x="22" y="68">MiniMax-M3</text></g>
+              </svg>
+              <div class="architecture-legend">
+                <span><i class="legend-dot running"></i>调用中</span>
+                <span><i class="legend-dot success"></i>服务正常</span>
+                <span><i class="legend-dot idle"></i>等待调用</span>
+                <strong id="active-operation">等待客户操作</strong>
+              </div>
+            </article>
+
+            <article class="console-card objects-card">
+              <header class="card-header">
+                <div class="section-label compact-label">
+                  <span>04</span><div><b>API OBJECTS</b><small>Backend resources</small></div>
+                </div>
+                <span class="objects-count" id="objects-count">0</span>
+              </header>
+              <div class="resource-grid" id="resource-grid" aria-live="polite">
+                <div class="resource-skeleton"></div><div class="resource-skeleton"></div><div class="resource-skeleton"></div>
+              </div>
+            </article>
+          </div>
+
+          <article class="console-card sdk-card">
             <header class="card-header">
               <div class="section-label compact-label">
-                <span>02</span><div><b>SYSTEM ARCHITECTURE</b><small>Live request topology</small></div>
+                <span>05</span><div><b>E2B SDK API</b><small>Sandbox service calls</small></div>
               </div>
-              <div class="live-badge"><i></i> LIVE</div>
-            </header>
-
-            <svg id="architecture-map" class="architecture-map" viewBox="0 0 900 360" role="img" aria-labelledby="architecture-title">
-              <title id="architecture-title">OnyxClaw APP 到 ACS Sandbox 和 MiniMax 的系统架构</title>
-              <defs>
-                <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" /></marker>
-                <filter id="node-glow"><feGaussianBlur stdDeviation="4" result="blur" /><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-              </defs>
-              <g class="architecture-edges">
-                <path data-edge="app-bff" d="M170 180 H250" />
-                <path data-edge="bff-e2b" d="M380 165 C420 130 430 105 475 94" />
-                <path data-edge="e2b-sandbox" d="M605 90 H690" />
-                <path data-edge="bff-openclaw" d="M380 195 C420 235 430 262 475 270" />
-                <path data-edge="sandbox-openclaw" d="M755 130 C750 210 680 270 605 270" />
-                <path data-edge="openclaw-model" d="M605 270 H690" />
-              </g>
-              <g class="architecture-node" data-node="app" transform="translate(30 140)"><rect width="140" height="80" rx="18"/><circle cx="25" cy="25" r="7"/><text x="22" y="50">WEB APP</text><text class="node-sub" x="22" y="68">Mobile UI</text></g>
-              <g class="architecture-node" data-node="bff" transform="translate(250 140)"><rect width="130" height="80" rx="18"/><circle cx="25" cy="25" r="7"/><text x="22" y="50">NODE BFF</text><text class="node-sub" x="22" y="68">API / Saga</text></g>
-              <g class="architecture-node" data-node="e2b" transform="translate(475 50)"><rect width="130" height="80" rx="18"/><circle cx="25" cy="25" r="7"/><text x="22" y="50">E2B API</text><text class="node-sub" x="22" y="68">ACS Manager</text></g>
-              <g class="architecture-node" data-node="sandbox" transform="translate(690 50)"><rect width="170" height="80" rx="18"/><circle cx="25" cy="25" r="7"/><text x="22" y="50">SANDBOX</text><text class="node-sub" x="22" y="68">OpenClaw runtime</text></g>
-              <g class="architecture-node" data-node="openclaw" transform="translate(475 230)"><rect width="130" height="80" rx="18"/><circle cx="25" cy="25" r="7"/><text x="22" y="50">CHANNEL</text><text class="node-sub" x="22" y="68">WebSocket</text></g>
-              <g class="architecture-node" data-node="model" transform="translate(690 230)"><rect width="170" height="80" rx="18"/><circle cx="25" cy="25" r="7"/><text x="22" y="50">MINIMAX</text><text class="node-sub" x="22" y="68">MiniMax-M3</text></g>
-            </svg>
-            <div class="architecture-legend">
-              <span><i class="legend-dot running"></i>调用中</span>
-              <span><i class="legend-dot success"></i>服务正常</span>
-              <span><i class="legend-dot idle"></i>等待调用</span>
-              <strong id="active-operation">等待客户操作</strong>
-            </div>
-          </article>
-
-          <article class="console-card activity-card">
-            <header class="card-header">
-              <div class="section-label compact-label">
-                <span>03</span><div><b>SANDBOX API ACTIVITY</b><small>Service calls & backend objects</small></div>
+              <div class="sdk-head-actions">
+                <span class="calls-count" id="calls-count">0</span>
+                <span class="poll-status" id="poll-status">SYNCING</span>
               </div>
-              <span class="poll-status" id="poll-status">SYNCING</span>
             </header>
-            <div class="resource-grid" id="resource-grid" aria-live="polite">
-              <div class="resource-skeleton"></div><div class="resource-skeleton"></div><div class="resource-skeleton"></div>
+            <div class="api-table-head">
+              <span>API</span>
+              <span>OBJECT</span>
+              <span>SERVICE</span>
+              <span>STATUS</span>
+              <span>TIME</span>
             </div>
-            <div class="api-table-head"><span>E2B SDK API</span><span>SERVICE</span><span>STATUS</span><span>TIME</span></div>
             <div class="api-call-list" id="api-call-list" aria-live="polite">
               <div class="empty-activity"><span>⌁</span><p>操作左侧 APP 后，API 调用会实时出现在这里。</p></div>
             </div>

@@ -78,3 +78,19 @@ test("monitor updates Sandbox object lifecycle and retains bounded history", () 
   assert.equal(snapshot.objects.find((object) => object.type === "Sandbox").state, "terminated");
   assert.doesNotMatch(JSON.stringify(snapshot), /secret command/);
 });
+
+test("reset clears the live activity, history, and tracked objects for a new tenant", () => {
+  const monitor = createSandboxServiceMonitor({ now: () => 0 });
+  const callId = monitor.begin({ api: "Sandbox.create", target: "Sandbox Manager" });
+  monitor.succeed(callId, {
+    object: { type: "Sandbox", id: "sandbox-1", state: "running" },
+  });
+  assert.equal(monitor.snapshot().calls.length, 1);
+  assert.equal(monitor.snapshot().objects.length, 1);
+
+  monitor.reset();
+
+  const snapshot = monitor.snapshot();
+  assert.deepEqual(snapshot.calls, []);
+  assert.deepEqual(snapshot.objects, []);
+});

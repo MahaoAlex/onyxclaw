@@ -57,6 +57,12 @@ export function createLocalConsoleServer({
     deploymentMode: uiConfig.deploymentMode === "cloud" ? "cloud" : "local",
     ...(uiConfig.providerId ? { providerId: uiConfig.providerId } : {}),
     ...(uiConfig.providerName ? { providerName: uiConfig.providerName } : {}),
+    ...(uiConfig.region ? { region: uiConfig.region } : {}),
+    ...(uiConfig.templateId ? { templateId: uiConfig.templateId } : {}),
+    ...(Number.isInteger(uiConfig.gatewayPort) ? { gatewayPort: uiConfig.gatewayPort } : {}),
+    ...(uiConfig.e2bHost ? { e2bHost: uiConfig.e2bHost } : {}),
+    ...(uiConfig.protocol ? { protocol: uiConfig.protocol } : {}),
+    ...(uiConfig.capabilities ? { capabilities: uiConfig.capabilities } : {}),
   };
 
   async function handleApi(request, response, pathname) {
@@ -83,7 +89,9 @@ export function createLocalConsoleServer({
       return sendJson(response, 200, await controller.stopLobsterMode());
     }
     if (request.method === "POST" && pathname === "/api/session/reset") {
-      return sendJson(response, 200, await controller.resetNewUser());
+      const status = await controller.resetNewUser();
+      operationMonitor.reset();
+      return sendJson(response, 200, status);
     }
     if (request.method === "GET" && pathname === "/api/soul") {
       return sendJson(response, 200, await controller.getSoul());

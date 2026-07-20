@@ -91,6 +91,17 @@ test("UI config exposes safe runtime identity without provider secrets", async (
       deploymentMode: "cloud",
       providerId: "alicloud-acs",
       providerName: "Alibaba Cloud ACS Agent Sandbox",
+      region: "cn-hangzhou",
+      templateId: "onyxclaw",
+      gatewayPort: 18789,
+      e2bHost: "sandbox-manager.sandbox-system.svc.cluster.local:7788",
+      protocol: "e2b-compatible",
+      capabilities: {
+        pauseResume: true,
+        memoryPersistence: true,
+        publicEgress: true,
+        vpc: true,
+      },
     },
   });
   await app.start();
@@ -102,6 +113,17 @@ test("UI config exposes safe runtime identity without provider secrets", async (
     deploymentMode: "cloud",
     providerId: "alicloud-acs",
     providerName: "Alibaba Cloud ACS Agent Sandbox",
+    region: "cn-hangzhou",
+    templateId: "onyxclaw",
+    gatewayPort: 18789,
+    e2bHost: "sandbox-manager.sandbox-system.svc.cluster.local:7788",
+    protocol: "e2b-compatible",
+    capabilities: {
+      pauseResume: true,
+      memoryPersistence: true,
+      publicEgress: true,
+      vpc: true,
+    },
   });
   assert.doesNotMatch(JSON.stringify(config), /apiKey|secret|baseUrl/i);
 });
@@ -189,7 +211,14 @@ test("ordinary BFF and OpenClaw calls do not enter Sandbox Service telemetry", a
   assert.deepEqual(observation.objects, []);
 });
 
-test("session reset returns the BFF to new-user state", async (t) => {
+test("session reset returns the BFF to new-user state and clears Sandbox Service telemetry", async (t) => {
+  const monitor = createSandboxServiceMonitor();
+  const call = monitor.begin({ api: "Sandbox.create", target: "Sandbox Manager" });
+  monitor.succeed(call, {
+    object: { type: "Sandbox", id: "sandbox-1", state: "running" },
+  });
+  assert.equal(monitor.snapshot().calls.length, 1);
+
   let resetCalls = 0;
   const controller = createController();
   controller.resetNewUser = async () => {
@@ -202,7 +231,12 @@ test("session reset returns the BFF to new-user state", async (t) => {
       connectionId: null,
     };
   };
-  const app = createLocalConsoleServer({ controller, host: "127.0.0.1", port: 0 });
+  const app = createLocalConsoleServer({
+    controller,
+    operationMonitor: monitor,
+    host: "127.0.0.1",
+    port: 0,
+  });
   await app.start();
   t.after(() => app.stop({ cleanup: false }));
 
@@ -214,9 +248,11 @@ test("session reset returns the BFF to new-user state", async (t) => {
   assert.equal(resetCalls, 1);
   assert.equal(reset.mode, "idle");
   assert.equal(reset.soulConfirmed, false);
+  assert.deepEqual(monitor.snapshot().calls, []);
+  assert.deepEqual(monitor.snapshot().objects, []);
 });
 
-test("web UI exposes a phone workflow plus architecture and API observability", async (t) => {
+test("web UI exposes a single reset button, parallel observability cards, and 5-column SDK calls", async (t) => {
   const app = createLocalConsoleServer({
     controller: createController(),
     host: "127.0.0.1",
@@ -235,35 +271,56 @@ test("web UI exposes a phone workflow plus architecture and API observability", 
   assert.match(html, /性格设定/);
   assert.match(html, /对话龙虾/);
   assert.match(html, /id="reset-user"/);
-  assert.match(html, /id="cloud-entry"/);
-  assert.match(html, /data-user-type="new"/);
-  assert.match(html, /id="sandbox-id"/);
-  assert.match(html, /重置新用户/);
   assert.match(html, /确认性格并继续/);
   assert.match(html, /data-step="soul"/);
   assert.match(html, /class="phone-frame"/);
   assert.match(html, /SYSTEM ARCHITECTURE/);
-  assert.match(html, /API ACTIVITY/);
+  assert.match(html, /API OBJECTS/);
+  assert.match(html, /E2B SDK API/);
   assert.match(html, /id="architecture-map"/);
   assert.match(html, /id="api-call-list"/);
   assert.match(html, /id="resource-grid"/);
-  assert.doesNotMatch(html, /创建 Sandbox/);
+  // Removed multi-tenant entry controls
+  assert.doesNotMatch(html, /id="cloud-entry"/);
+  assert.doesNotMatch(html, /data-user-type="new"/);
+  assert.doesNotMatch(html, /id="sandbox-id"/);
+  assert.doesNotMatch(html, /id="start-mode"/);
+  assert.doesNotMatch(html, /id="stop-mode"/);
+  assert.doesNotMatch(html, /id="chat-stop"/);
+  assert.doesNotMatch(html, /id="metric-mode"/);
+  assert.doesNotMatch(html, /id="metric-connection"/);
+  // 5-column SDK call table head
+  assert.match(html, /<span>API<\/span>\s*<span>OBJECT<\/span>\s*<span>SERVICE<\/span>\s*<span>STATUS<\/span>\s*<span>TIME<\/span>/);
   assert.match(html, /src="\/app\.js"/);
   assert.match(styles, /body\s*\{[^}]*overflow-y:\s*auto/);
   assert.doesNotMatch(styles, /body\s*\{[^}]*overflow:\s*hidden/);
   assert.match(styles, /\.workbench\s*\{[\s\S]*?height:\s*calc\(100dvh - 84px\)/);
-  assert.match(styles, /grid-template-columns:\s*minmax\(340px,\s*min\(540px,\s*38vw\)\)\s+minmax\(0,\s*1fr\)/);
+  assert.match(styles, /\.workbench\s*\{[\s\S]*?grid-template-columns:\s*minmax\(340px,\s*min\(420px,\s*30vw\)\)\s+minmax\(0,\s*1fr\)/);
   assert.match(styles, /\.phone-frame\s*\{[\s\S]*?aspect-ratio:\s*430\s*\/\s*780/);
   assert.match(styles, /\.phone-frame\s*\{[^}]*max-width:\s*100%/);
-  assert.match(styles, /\.service-workbench\s*\{[\s\S]*?grid-template-rows:\s*minmax\(0,/);
-  assert.match(styles, /grid-template-rows:\s*minmax\(0,\s*\.68fr\)\s+minmax\(0,\s*1\.32fr\)/);
-  assert.match(styles, /\.architecture-map\s*\{[^}]*width:\s*min\(88%,\s*840px\)/);
+  // service-workbench is a 2-row layout; top row is the parallel architecture + objects
+  assert.match(styles, /\.service-workbench\s*\{[\s\S]*?grid-template-rows:\s*minmax\(0,\s*1fr\)\s+minmax\(0,\s*1\.05fr\)/);
+  assert.match(styles, /\.observability-top\s*\{[\s\S]*?grid-template-columns:\s*minmax\(0,\s*1\.15fr\)\s+minmax\(0,\s*1fr\)/);
+  assert.doesNotMatch(styles, /\.cloud-entry/);
+  assert.doesNotMatch(styles, /\.mini-metrics/);
+  assert.match(styles, /\.api-table-head,\s*\.api-row\s*\{[\s\S]*?grid-template-columns:\s*minmax\(120px,\s*1\.05fr\)\s+minmax\(150px,\s*1\.25fr\)\s+minmax\(120px,\s*1fr\)\s+88px\s+64px/);
+  assert.match(styles, /\.architecture-map\s*\{[^}]*width:\s*100%/);
   assert.match(styles, /\.api-name b\s*\{[^}]*font:\s*750 12px/);
   assert.match(styles, /\.api-duration\s*\{[^}]*font:\s*750 11px/);
   assert.doesNotMatch(styles, /@media\s*\(max-width:\s*860px\)/);
+  assert.match(styles, /@media\s*\(max-width:\s*1180px\)/);
   assert.match(styles, /@media\s*\(max-width:\s*680px\)/);
   assert.doesNotMatch(styles, /phone-hardware\s*\{[^}]*display:\s*none/);
   assert.match(styles, /\.composer textarea\s*\{[\s\S]*?caret-color:\s*var\(--coral-dark\)/);
   assert.match(browserApp, /history\.scrollRestoration\s*=\s*"manual"/);
   assert.match(browserApp, /window\.scrollTo\(0,\s*0\)/);
+  // UI no longer probes Sandbox ID / instance ID or metric states
+  assert.doesNotMatch(browserApp, /buildStartPayload/);
+  assert.doesNotMatch(browserApp, /cloudStartLabel/);
+  assert.doesNotMatch(browserApp, /metricInstance/);
+  assert.doesNotMatch(browserApp, /metricConnection/);
+  // The single reset button handles enter + stop + reset
+  assert.match(browserApp, /async function disconnectAndReset/);
+  assert.match(browserApp, /async function enterLobsterMode/);
+  assert.match(browserApp, /clearApiCallsUi/);
 });

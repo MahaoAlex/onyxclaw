@@ -9,11 +9,7 @@ test("a browser refresh always lands on lobster mode without resetting server pr
       initialLanding: true,
       status: { mode: "connected", currentStep: "chat", soulConfirmed: true },
     }),
-    {
-      visibleStep: "mode",
-      startLabel: "继续龙虾模式",
-      startDisabled: false,
-    },
+    { visibleStep: "mode" },
   );
 });
 
@@ -23,24 +19,16 @@ test("after continuing, the UI follows the server-controlled serial step", () =>
       initialLanding: false,
       status: { mode: "connected", currentStep: "soul", soulConfirmed: false },
     }),
-    {
-      visibleStep: "soul",
-      startLabel: "龙虾模式已连接",
-      startDisabled: true,
-    },
+    { visibleStep: "soul" },
   );
 });
 
-test("cloud allocation advances to personality without enabling start again", () => {
+test("cloud allocation advances to personality", () => {
   assert.deepEqual(
     resolveLandingView({
       initialLanding: false,
       status: { mode: "allocated", currentStep: "soul", soulConfirmed: false },
     }),
-    {
-      visibleStep: "soul",
-      startLabel: "云端 Sandbox 已创建",
-      startDisabled: true,
-    },
+    { visibleStep: "soul" },
   );
 });

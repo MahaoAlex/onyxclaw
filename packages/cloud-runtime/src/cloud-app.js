@@ -67,6 +67,18 @@ const app = createLocalConsoleServer({
     deploymentMode: "cloud",
     providerId: "alicloud-acs",
     providerName: provider.displayName,
+    region: process.env.ALIBABA_CLOUD_REGION || null,
+    templateId: provider.sandbox?.templateId ?? null,
+    gatewayPort: provider.openclaw?.gatewayPort ?? null,
+    e2bHost: (() => {
+      try {
+        return provider.api?.baseUrl ? new URL(provider.api.baseUrl).host : null;
+      } catch {
+        return null;
+      }
+    })(),
+    protocol: provider.protocol ?? null,
+    capabilities: provider.capabilities ?? null,
   },
   host: process.env.APP_HOST ?? "0.0.0.0",
   port: Number(process.env.APP_PORT ?? "3000"),

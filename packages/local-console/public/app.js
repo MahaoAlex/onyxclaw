@@ -1,11 +1,7 @@
 import { resolveLandingView } from "./ui-state.js";
 import { architectureStateFor, formatDuration } from "./observability-ui.js";
 import { calculateViewportFit } from "./viewport-fit.js";
-import {
-  buildStartPayload,
-  cloudStartLabel,
-  runtimePresentation,
-} from "./runtime-ui.js";
+import { acsClusterPresentation, runtimePresentation } from "./runtime-ui.js";
 
 if ("scrollRestoration" in history) history.scrollRestoration = "manual";
 window.scrollTo(0, 0);
@@ -45,13 +41,7 @@ window.addEventListener("resize", scheduleViewportFit);
 const elements = {
   status: document.querySelector("#global-status"),
   statusText: document.querySelector("#global-status-text"),
-  start: document.querySelector("#start-mode"),
-  stop: document.querySelector("#stop-mode"),
   modeNotice: document.querySelector("#mode-notice"),
-  metricMode: document.querySelector("#metric-mode"),
-  metricInstance: document.querySelector("#metric-instance"),
-  metricGateway: document.querySelector("#metric-gateway"),
-  metricConnection: document.querySelector("#metric-connection"),
   soul: document.querySelector("#soul-editor"),
   soulSize: document.querySelector("#soul-size"),
   soulHash: document.querySelector("#soul-hash"),
@@ -64,26 +54,36 @@ const elements = {
   chatForm: document.querySelector("#chat-form"),
   chatInput: document.querySelector("#chat-input"),
   send: document.querySelector(".send-button"),
-  chatStop: document.querySelector("#chat-stop"),
   resetUser: document.querySelector("#reset-user"),
   resourceGrid: document.querySelector("#resource-grid"),
+  objectsCount: document.querySelector("#objects-count"),
   apiCallList: document.querySelector("#api-call-list"),
+  callsCount: document.querySelector("#calls-count"),
   pollStatus: document.querySelector("#poll-status"),
   activeOperation: document.querySelector("#active-operation"),
   environmentLabel: document.querySelector("#environment-label"),
   modeCopy: document.querySelector("#mode-copy"),
-  cloudEntry: document.querySelector("#cloud-entry"),
-  existingSandboxFields: document.querySelector("#existing-sandbox-fields"),
-  sandboxId: document.querySelector("#sandbox-id"),
-  instanceId: document.querySelector("#instance-id"),
-  primaryMetricLabel: document.querySelector("#metric-primary-label"),
-  secondaryMetricLabel: document.querySelector("#metric-secondary-label"),
+  runtimeStrip: document.querySelector("#runtime-strip"),
+  runtimeSandboxId: document.querySelector("#runtime-sandbox-id"),
+  runtimeInstanceId: document.querySelector("#runtime-instance-id"),
+  runtimeConnectionId: document.querySelector("#runtime-connection-id"),
+  clusterCard: document.querySelector("#cluster-card"),
+  clusterProvider: document.querySelector("#cluster-provider"),
+  clusterRegion: document.querySelector("#cluster-region"),
+  clusterRegionChip: document.querySelector("#cluster-region-chip"),
+  clusterTemplate: document.querySelector("#cluster-template"),
+  clusterE2bHost: document.querySelector("#cluster-e2b-host"),
+  clusterGatewayPort: document.querySelector("#cluster-gateway-port"),
+  clusterProtocol: document.querySelector("#cluster-protocol"),
+  clusterCapabilities: document.querySelector("#cluster-capabilities"),
 };
+
 let helloShown = false;
 let helloLoading = false;
 let initialLanding = true;
 let uiConfig = { deploymentMode: "local" };
-let cloudUserType = "new";
+let currentCalls = [];
+let currentObjects = [];
 
 async function api(path, options = {}) {
   const response = await fetch(path, {
@@ -108,9 +108,59 @@ function applyRuntimePresentation(config) {
   const presentation = runtimePresentation(config);
   elements.environmentLabel.textContent = presentation.environmentLabel;
   elements.modeCopy.textContent = presentation.modeCopy;
-  elements.cloudEntry.hidden = !presentation.cloud;
-  elements.primaryMetricLabel.textContent = presentation.primaryMetricLabel;
-  elements.secondaryMetricLabel.textContent = presentation.secondaryMetricLabel;
+  const cluster = acsClusterPresentation(config);
+  renderClusterCard(cluster, config);
+  elements.runtimeStrip.hidden = !cluster;
+}
+
+function renderClusterCard(cluster, config) {
+  if (!cluster) {
+    elements.clusterCard.hidden = true;
+    elements.clusterCapabilities.replaceChildren();
+    return;
+  }
+  elements.clusterCard.hidden = false;
+  const providerLabel = config.providerName || config.providerId || "cloud";
+  elements.clusterProvider.textContent = providerLabel;
+  elements.clusterRegion.textContent = cluster.region || "—";
+  elements.clusterRegionChip.textContent = (cluster.region || "—").toUpperCase();
+  elements.clusterTemplate.textContent = cluster.templateId || "—";
+  elements.clusterE2bHost.textContent = cluster.e2bHost || "—";
+  elements.clusterGatewayPort.textContent =
+    cluster.gatewayPort === null || cluster.gatewayPort === undefined
+      ? "—"
+      : String(cluster.gatewayPort);
+  elements.clusterProtocol.textContent = cluster.protocol || "—";
+  elements.clusterCapabilities.replaceChildren();
+  const capabilityEntries = cluster.capabilities
+    ? Object.entries(cluster.capabilities)
+    : [];
+  if (!capabilityEntries.length) {
+    const placeholder = document.createElement("li");
+    placeholder.className = "off";
+    placeholder.textContent = "无能力声明";
+    elements.clusterCapabilities.append(placeholder);
+    return;
+  }
+  for (const [name, enabled] of capabilityEntries) {
+    const item = document.createElement("li");
+    item.className = enabled ? "" : "off";
+    item.textContent = `${enabled ? "●" : "○"} ${name}`;
+    elements.clusterCapabilities.append(item);
+  }
+}
+
+function renderRuntimeStrip(status) {
+  if (!elements.runtimeStrip || elements.runtimeStrip.hidden) return;
+  const sandboxId = status?.sandboxId ?? null;
+  const instanceId = status?.instanceId ?? null;
+  const connectionId = status?.connectionId ?? null;
+  elements.runtimeSandboxId.textContent = sandboxId || "尚未创建 Sandbox";
+  elements.runtimeSandboxId.title = sandboxId || "";
+  elements.runtimeInstanceId.textContent = instanceId || "等待分配";
+  elements.runtimeInstanceId.title = instanceId || "";
+  elements.runtimeConnectionId.textContent = connectionId || "Channel 未连接";
+  elements.runtimeConnectionId.title = connectionId || "";
 }
 
 function renderStatus(status) {
@@ -123,26 +173,13 @@ function renderStatus(status) {
   };
   elements.status.className = `status-pill ${status.mode}`;
   elements.statusText.textContent = labels[status.mode] ?? status.mode;
-  elements.metricMode.textContent = status.mode.toUpperCase();
-  const cloud = uiConfig.deploymentMode === "cloud";
-  elements.metricInstance.textContent = cloud
-    ? (status.sandboxId ?? "—")
-    : (status.instanceId ?? "local-mac");
-  elements.metricGateway.textContent = cloud
-    ? (status.instanceId ?? "—")
-    : (status.gateway?.ok ? "HEALTHY" : "待检查");
-  elements.metricConnection.textContent = status.connectionId ?? "—";
   const connected = status.mode === "connected";
   const allocated = status.mode === "allocated";
   const chatReady = connected && status.soulConfirmed;
   const busy = status.mode === "starting";
   const landing = resolveLandingView({ initialLanding, status });
-  elements.start.textContent = landing.startLabel;
-  if (cloud && status.mode === "idle") {
-    elements.start.textContent = cloudStartLabel(cloudUserType);
-  }
-  elements.start.disabled = landing.startDisabled;
-  elements.stop.disabled = (!connected && !allocated) || busy;
+  elements.resetUser.textContent = busy ? "正在重置…" : "重置新用户";
+  elements.resetUser.disabled = busy;
   elements.chatInput.disabled = !chatReady;
   elements.send.disabled = !chatReady;
   elements.chatState.textContent = chatReady ? "已连接 · 可以发送" : "等待完成设置";
@@ -151,21 +188,21 @@ function renderStatus(status) {
 }
 
 function renderObjects(objects) {
+  currentObjects = objects;
   elements.resourceGrid.replaceChildren();
   if (!objects.length) {
     const empty = document.createElement("div");
-    empty.className = "resource-card";
-    const header = document.createElement("header");
-    const label = document.createElement("b");
-    label.textContent = "NO OBJECTS";
-    header.append(label);
-    const detail = document.createElement("p");
-    detail.textContent = "等待 Sandbox Service 调用";
-    empty.append(header, detail);
+    empty.className = "resource-empty";
+    const glyph = document.createElement("span");
+    glyph.textContent = "⌁";
+    const copy = document.createElement("p");
+    copy.textContent = "等待后端 API 对象返回";
+    empty.append(glyph, copy);
     elements.resourceGrid.append(empty);
+    elements.objectsCount.textContent = "0";
     return;
   }
-  for (const object of objects.slice(0, 6)) {
+  for (const object of objects.slice(0, 8)) {
     const card = document.createElement("article");
     card.className = `resource-card ${object.state}`;
     const header = document.createElement("header");
@@ -181,9 +218,11 @@ function renderObjects(objects) {
     card.append(header, id, state);
     elements.resourceGrid.append(card);
   }
+  elements.objectsCount.textContent = String(objects.length);
 }
 
 function renderCalls(calls) {
+  currentCalls = calls;
   elements.apiCallList.replaceChildren();
   if (!calls.length) {
     const empty = document.createElement("div");
@@ -191,9 +230,10 @@ function renderCalls(calls) {
     const glyph = document.createElement("span");
     glyph.textContent = "⌁";
     const copy = document.createElement("p");
-    copy.textContent = "尚未调用 Sandbox Service API。";
+    copy.textContent = "尚未调用 E2B SDK API。";
     empty.append(glyph, copy);
     elements.apiCallList.append(empty);
+    elements.callsCount.textContent = "0";
     return;
   }
   for (const call of calls) {
@@ -211,6 +251,7 @@ function renderCalls(calls) {
     const target = document.createElement("span");
     target.className = "api-target";
     target.textContent = call.target;
+    target.title = call.target;
     const state = document.createElement("span");
     state.className = `api-status ${call.state}`;
     state.textContent = call.state;
@@ -220,6 +261,7 @@ function renderCalls(calls) {
     row.append(name, target, state, duration);
     elements.apiCallList.append(row);
   }
+  elements.callsCount.textContent = String(calls.length);
 }
 
 function renderArchitecture(calls, objects) {
@@ -261,6 +303,20 @@ async function refreshObservability() {
   }
 }
 
+function clearApiCallsUi() {
+  currentCalls = [];
+  elements.apiCallList.replaceChildren();
+  const empty = document.createElement("div");
+  empty.className = "empty-activity";
+  const glyph = document.createElement("span");
+  glyph.textContent = "⌁";
+  const copy = document.createElement("p");
+  copy.textContent = "尚未调用 E2B SDK API。";
+  empty.append(glyph, copy);
+  elements.apiCallList.append(empty);
+  elements.callsCount.textContent = "0";
+}
+
 function showStep(step, status = {}) {
   document.querySelectorAll(".panel").forEach((item) => item.classList.remove("active"));
   document.querySelector(`#panel-${step}`)?.classList.add("active");
@@ -276,7 +332,9 @@ function showStep(step, status = {}) {
 }
 
 async function refreshStatus() {
-  renderStatus(await api("/api/status"));
+  const status = await api("/api/status");
+  renderStatus(status);
+  renderRuntimeStrip(status);
 }
 
 function renderSoul(file) {
@@ -345,69 +403,74 @@ async function ensureHello() {
   }
 }
 
-elements.start.addEventListener("click", async () => {
+async function enterLobsterMode() {
+  elements.resetUser.disabled = true;
   notice(elements.modeNotice, "正在调用后端服务并准备 OpenClaw，请稍候…");
-  const current = await api("/api/status");
-  initialLanding = false;
-  if (current.mode === "connected") elements.start.disabled = true;
-  else renderStatus({ ...current, mode: "starting" });
   try {
-    const payload = buildStartPayload({
-      deploymentMode: uiConfig.deploymentMode,
-      userType: cloudUserType,
-      sandboxId: elements.sandboxId.value,
-      instanceId: elements.instanceId.value,
-    });
-    const status = await api("/api/lobster/start", {
-      method: "POST",
-      body: JSON.stringify(payload),
-    });
+    const current = await api("/api/status");
+    initialLanding = false;
+    if (current.mode === "connected") {
+      elements.resetUser.disabled = false;
+      return;
+    }
+    renderStatus({ ...current, mode: "starting" });
+    const status = await api("/api/lobster/start", { method: "POST" });
     renderStatus(status);
     notice(elements.modeNotice, "龙虾模式已就绪，可以编辑性格或开始对话。");
   } catch (error) {
     await refreshStatus();
     notice(elements.modeNotice, error.message, true);
+  } finally {
+    elements.resetUser.disabled = false;
   }
-});
+}
 
-document.querySelectorAll("[data-user-type]").forEach((button) => {
-  button.addEventListener("click", () => {
-    cloudUserType = button.dataset.userType;
-    document.querySelectorAll("[data-user-type]").forEach((item) =>
-      item.classList.toggle("active", item === button));
-    elements.existingSandboxFields.hidden = cloudUserType !== "existing";
-    elements.start.textContent = cloudStartLabel(cloudUserType);
-    scheduleViewportFit();
-  });
-});
-
-elements.stop.addEventListener("click", async () => {
-  elements.stop.disabled = true;
+async function disconnectAndReset() {
+  elements.resetUser.disabled = true;
   notice(elements.modeNotice, uiConfig.deploymentMode === "cloud"
     ? "正在清理云端 Sandbox 和 Channel 连接…"
     : "正在禁用测试 Channel 并清理连接…");
   try {
-    renderStatus(await api("/api/lobster/stop", { method: "POST" }));
-    notice(elements.modeNotice, "连接与测试资源已清理。");
-  } catch (error) {
-    notice(elements.modeNotice, error.message, true);
-  }
-});
-
-elements.resetUser.addEventListener("click", async () => {
-  elements.resetUser.disabled = true;
-  try {
+    if (await needsStop()) {
+      renderStatus(await api("/api/lobster/stop", { method: "POST" }));
+    }
     const status = await api("/api/session/reset", { method: "POST" });
     helloShown = false;
     helloLoading = false;
     initialLanding = true;
     resetChatView();
+    clearApiCallsUi();
     renderStatus(status);
     notice(elements.modeNotice, "已清理连接和会话状态，现在按全新用户流程开始。");
   } catch (error) {
     notice(elements.modeNotice, `重置失败：${error.message}`, true);
   } finally {
     elements.resetUser.disabled = false;
+  }
+}
+
+async function needsStop() {
+  try {
+    const current = await api("/api/status");
+    return current.mode === "connected" || current.mode === "allocated";
+  } catch {
+    return false;
+  }
+}
+
+elements.resetUser.addEventListener("click", async () => {
+  let mode = "idle";
+  try {
+    const current = await api("/api/status");
+    mode = current.mode;
+  } catch (error) {
+    notice(elements.modeNotice, `状态查询失败：${error.message}`, true);
+    return;
+  }
+  if (mode === "idle") {
+    await enterLobsterMode();
+  } else {
+    await disconnectAndReset();
   }
 });
 
@@ -468,18 +531,6 @@ elements.chatInput.addEventListener("keydown", (event) => {
   if (event.key === "Enter" && !event.shiftKey) {
     event.preventDefault();
     elements.chatForm.requestSubmit();
-  }
-});
-
-elements.chatStop.addEventListener("click", async () => {
-  elements.chatStop.disabled = true;
-  try {
-    renderStatus(await api("/api/lobster/stop", { method: "POST" }));
-    notice(elements.modeNotice, "连接与测试资源已清理。");
-  } catch (error) {
-    addMessage("assistant", `清理失败：${error.message}`, "系统");
-  } finally {
-    elements.chatStop.disabled = false;
   }
 });
 

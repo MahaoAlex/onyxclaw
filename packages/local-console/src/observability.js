@@ -51,6 +51,11 @@ export function createSandboxServiceMonitor({
   }
 
   return {
+    reset() {
+      active.clear();
+      history.length = 0;
+      objects.clear();
+    },
     begin({ api, target, object }) {
       const id = idFactory();
       const safe = remember(object);
