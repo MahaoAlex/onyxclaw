@@ -56,7 +56,7 @@ button { color: inherit; }
 .phone-frame::after { top: 245px; height: 48px; }
 .phone-hardware { position: absolute; z-index: 5; top: 18px; left: 50%; width: 105px; height: 27px; transform: translateX(-50%); border-radius: 18px; background: #09100f; }
 .phone-hardware span { position: absolute; right: 17px; top: 9px; width: 7px; height: 7px; border-radius: 50%; background: #172c35; box-shadow: inset 0 0 3px #5790a4; }
-.phone-screen { height: 100%; position: relative; overflow: hidden; border-radius: 39px; color: var(--phone-ink); background: var(--paper); box-shadow: inset 0 0 0 1px rgba(255,255,255,.5); }
+.phone-screen { height: 100%; position: relative; overflow: hidden; border-radius: 39px; color: var(--phone-ink); background: var(--paper); box-shadow: inset 0 0 0 1px rgba(255,255,255,.5); display: flex; flex-direction: column; }
 .phone-statusbar { height: 40px; padding: 13px 23px 0; display: flex; justify-content: space-between; font: 700 10px ui-monospace, monospace; }
 .app-header { height: 50px; padding: 0 18px; display: flex; align-items: center; justify-content: space-between; }
 .app-header-actions { display: flex; align-items: center; gap: 6px; min-width: 0; }
@@ -88,33 +88,40 @@ button { color: inherit; }
 .runtime-label { color: var(--coral-dark); font: 800 7px ui-monospace, monospace; letter-spacing: .14em; }
 .runtime-value { flex: 1; min-width: 0; overflow: hidden; color: #18312d; font: 750 9px ui-monospace, monospace; text-align: right; text-overflow: ellipsis; white-space: nowrap; }
 
-.app-content { height: calc(100% - 146px); overflow: hidden; }
-.panel { display: none; height: 100%; padding: 20px 20px 26px; overflow-y: auto; }
+/* .app-content takes whatever vertical space is left after the fixed
+ * statusbar / header / runtime-strip / tabs row, regardless of which
+ * of those are visible in cloud vs local mode. */
+.app-content { flex: 1 1 auto; min-height: 0; overflow: hidden; }
+.panel { display: none; height: 100%; padding: 16px 18px 18px; overflow-y: auto; box-sizing: border-box; }
 .panel.active { display: block; animation: panel-in .35s ease both; }
+/* SOUL panel: keep the heading and action buttons anchored at the top and
+ * bottom while the textarea fills the remaining space and scrolls. */
+#panel-soul { display: none; flex-direction: column; }
+#panel-soul.active { display: flex; }
 .lobster-hero { text-align: center; padding-top: 4px; }
-.lobster-orbit { width: 148px; height: 148px; margin: 0 auto 12px; display: grid; place-items: center; position: relative; border: 1px solid rgba(20,32,31,.14); border-radius: 50%; background: radial-gradient(circle, rgba(240,100,73,.13), transparent 62%); }
+.lobster-orbit { width: 132px; height: 132px; margin: 0 auto 10px; display: grid; place-items: center; position: relative; border: 1px solid rgba(20,32,31,.14); border-radius: 50%; background: radial-gradient(circle, rgba(240,100,73,.13), transparent 62%); }
 .lobster-orbit::before, .lobster-orbit::after { content: ""; position: absolute; border-radius: 50%; }
 .lobster-orbit::before { inset: 12px; border: 1px dashed rgba(20,32,31,.13); animation: spin 18s linear infinite; }
 .lobster-orbit::after { width: 9px; height: 9px; top: 20px; left: 25px; background: var(--coral); box-shadow: 0 0 0 6px rgba(240,100,73,.12); }
-.lobster-orbit span { font: 88px Georgia, serif; color: #1a302d; transform: rotate(-10deg); }
+.lobster-orbit span { font: 78px Georgia, serif; color: #1a302d; transform: rotate(-10deg); }
 .lobster-hero > p:first-of-type, .mobile-panel-head p { margin: 0 0 7px; color: var(--coral-dark); font: 800 8px ui-monospace, monospace; letter-spacing: .16em; }
-h1 { margin: 0; font: 500 36px/1.02 Georgia, "Songti SC", serif; letter-spacing: -.04em; }
+h1 { margin: 0; font: 500 32px/1.02 Georgia, "Songti SC", serif; letter-spacing: -.04em; }
 h1 em { color: var(--coral); font-weight: 500; }
-.mobile-copy { color: var(--phone-muted); font-size: 11px; line-height: 1.65; }
-.lobster-hero .mobile-copy { width: 260px; margin: 16px auto 0; }
-.lobster-cta { width: min(260px, calc(100% - 24px)); margin: 18px auto 0; min-height: 46px; padding: 12px 14px; font-size: 13px; box-shadow: 0 12px 24px rgba(240,100,73,.18); }
+.mobile-copy { color: var(--phone-muted); font-size: 11px; line-height: 1.55; }
+.lobster-hero .mobile-copy { width: 260px; margin: 10px auto 0; }
+.lobster-cta { width: min(260px, calc(100% - 24px)); margin: 14px auto 0; min-height: 44px; padding: 10px 14px; font-size: 13px; box-shadow: 0 12px 24px rgba(240,100,73,.18); }
 .lobster-cta[hidden] { display: none; }
 .lobster-cta:disabled { opacity: .55; cursor: wait; box-shadow: none; }
-.notice { margin: 18px 0 0; padding: 9px 11px; border-radius: 10px; color: #256c5c; background: rgba(112,219,186,.16); font-size: 10px; line-height: 1.45; }
+.notice { margin: 12px 0 0; padding: 8px 11px; border-radius: 10px; color: #256c5c; background: rgba(112,219,186,.16); font-size: 10px; line-height: 1.45; }
 .notice.error { color: #a63728; background: rgba(240,100,73,.13); }
 
 .mobile-panel-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
 .mobile-panel-head h2 { margin: 0; font: 500 25px Georgia, "Songti SC", serif; }
 .icon-button { width: 32px; height: 32px; border: 1px solid rgba(20,32,31,.12); border-radius: 10px; color: var(--phone-muted); background: rgba(255,255,255,.6); cursor: pointer; }
-#soul-editor { width: 100%; min-height: 380px; margin: 12px 0 8px; resize: vertical; border: 1px solid rgba(20,32,31,.13); border-radius: 13px; padding: 14px; outline: none; color: #dce9e6; background: #162522; font: 11px/1.65 ui-monospace, SFMono-Regular, Menlo, monospace; }
+#soul-editor { width: 100%; min-height: 160px; flex: 1 1 auto; margin: 12px 0 8px; resize: vertical; border: 1px solid rgba(20,32,31,.13); border-radius: 13px; padding: 14px; outline: none; color: #dce9e6; background: #162522; font: 11px/1.65 ui-monospace, SFMono-Regular, Menlo, monospace; }
 #soul-editor:focus { border-color: #4aa891; box-shadow: 0 0 0 3px rgba(74,168,145,.13); }
 .file-meta { display: flex; justify-content: space-between; gap: 8px; color: #8b9693; font: 7px ui-monospace, monospace; }
-.editor-actions { display: grid; grid-template-columns: .8fr 1.2fr; gap: 8px; margin-top: 13px; }
+.editor-actions { display: grid; grid-template-columns: .8fr 1.2fr; gap: 8px; margin-top: 13px; flex: 0 0 auto; }
 .button { min-height: 42px; border: 1px solid rgba(20,32,31,.13); border-radius: 13px; padding: 10px 14px; cursor: pointer; font-size: 11px; font-weight: 750; background: rgba(255,255,255,.6); transition: transform .18s, opacity .18s, box-shadow .18s; }
 .button:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(25,45,41,.12); }
 .button:disabled { opacity: .42; cursor: not-allowed; }
@@ -122,11 +129,11 @@ h1 em { color: var(--coral); font-weight: 500; }
 .button-primary span { float: right; }
 .button-quiet { color: var(--phone-muted); }
 
-.chat-panel { display: none; padding: 18px 14px 15px; }
-.chat-panel.active { display: flex; flex-direction: column; }
-.chat-head { padding: 0 5px; }
-.chat-state { align-self: flex-start; margin: 8px 5px 2px; padding: 5px 8px; color: #387b6c; border-radius: 999px; background: rgba(112,219,186,.16); font-size: 8px; }
-.messages { flex: 1; min-height: 0; overflow-y: auto; padding: 12px 5px; display: flex; flex-direction: column; gap: 10px; }
+.chat-panel { display: none; padding: 14px 14px 12px; }
+.chat-panel.active { display: flex; flex-direction: column; min-height: 0; }
+.chat-head { padding: 0 5px; flex: 0 0 auto; }
+.chat-state { align-self: flex-start; margin: 6px 5px 2px; padding: 5px 8px; color: #387b6c; border-radius: 999px; background: rgba(112,219,186,.16); font-size: 8px; flex: 0 0 auto; }
+.messages { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 8px 5px; display: flex; flex-direction: column; gap: 10px; }
 .empty-chat { margin: auto; text-align: center; color: var(--phone-muted); font-size: 10px; }
 .empty-chat div { color: rgba(24,48,45,.18); font: 64px Georgia, serif; }
 .message { max-width: 82%; font-size: 11px; }
