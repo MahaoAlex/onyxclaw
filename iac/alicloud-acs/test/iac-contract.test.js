@@ -120,7 +120,7 @@ test("derived OpenClaw image contains ACS tools and waits for runtime bootstrap"
   assert.match(entrypoint, /gateway.*--bind.*lan/s);
 });
 
-test("release tags publish one immutable GHCR image and an OCI release archive", async () => {
+test("release tags publish one immutable GHCR image and a Docker 24.x tar.gz", async () => {
   const workflow = await readRepositoryFile(
     ".github/workflows/release-openclaw-image.yml",
   );
@@ -131,10 +131,16 @@ test("release tags publish one immutable GHCR image and an OCI release archive",
   assert.match(workflow, /owner="\$\{GITHUB_REPOSITORY_OWNER,,\}"/);
   assert.match(workflow, /image="ghcr\.io\/\$\{owner\}\/onyxclaw-openclaw"/);
   assert.match(workflow, /iac\/alicloud-acs\/image\/Dockerfile/);
-  assert.match(workflow, /type=registry[^\n]*push=true/);
-  assert.match(workflow, /type=oci[^\n]*dest=/);
+  // Registry push step: bare `push: true` is used because the Docker-format
+  // archive build is split into a separate step (buildx's `docker` exporter
+  // cannot serialise manifest lists alongside a registry target).
+  assert.match(workflow, /push:\s*true/);
+  // Separate Docker-format archive build step.
+  assert.match(workflow, /type=docker[^\n]*dest=/);
   assert.match(workflow, /sha256sum/);
-  assert.match(workflow, /steps\.build\.outputs\.digest/);
+  // Provenance + SBOM live on the push step; the archive step pulls digest
+  // from the push step.
+  assert.match(workflow, /steps\.push\.outputs\.digest/);
   assert.match(workflow, /gh release (create|upload)/);
   assert.doesNotMatch(workflow, /uses:\s+[^\s]+@v\d+/);
 });

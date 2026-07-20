@@ -72,6 +72,9 @@
                     <p>OPENCLAW COMPANION</p>
                     <h1>进入<br /><em>龙虾模式</em></h1>
                     <p class="mobile-copy" id="mode-copy">连接这台 Mac 上的 OpenClaw，创建一只拥有专属性格的智能龙虾。</p>
+                    <button class="button button-primary lobster-cta" id="enter-lobster-mode" type="button">
+                      进入龙虾模式
+                    </button>
                   </div>
                   <div class="notice" id="mode-notice" hidden></div>
                 </section>
@@ -112,28 +115,10 @@
 
         <section class="service-workbench" aria-label="后端服务可观测工作台">
           <div class="observability-top">
-            <article class="console-card cluster-card" id="cluster-card" hidden>
-              <header class="card-header">
-                <div class="section-label compact-label">
-                  <span>02</span><div><b>ACS CLUSTER</b><small>Provider runtime context</small></div>
-                </div>
-                <span class="calls-count" id="cluster-region-chip">—</span>
-              </header>
-              <dl class="cluster-grid">
-                <dt>Provider</dt><dd id="cluster-provider">—</dd>
-                <dt>Region</dt><dd id="cluster-region">—</dd>
-                <dt>Template</dt><dd id="cluster-template">—</dd>
-                <dt>E2B Host</dt><dd id="cluster-e2b-host">—</dd>
-                <dt>Gateway Port</dt><dd id="cluster-gateway-port">—</dd>
-                <dt>Protocol</dt><dd id="cluster-protocol">—</dd>
-              </dl>
-              <ul class="capability-list" id="cluster-capabilities"></ul>
-            </article>
-
             <article class="console-card architecture-card">
               <header class="card-header">
                 <div class="section-label compact-label">
-                  <span>03</span><div><b>SYSTEM ARCHITECTURE</b><small>Live request topology</small></div>
+                  <span>02</span><div><b>SYSTEM ARCHITECTURE</b><small>Live request topology</small></div>
                 </div>
                 <div class="live-badge"><i></i> LIVE</div>
               </header>
@@ -170,7 +155,7 @@
             <article class="console-card objects-card">
               <header class="card-header">
                 <div class="section-label compact-label">
-                  <span>04</span><div><b>API OBJECTS</b><small>Backend resources</small></div>
+                  <span>03</span><div><b>API OBJECTS</b><small>Backend resources</small></div>
                 </div>
                 <span class="objects-count" id="objects-count">0</span>
               </header>
@@ -183,7 +168,7 @@
           <article class="console-card sdk-card">
             <header class="card-header">
               <div class="section-label compact-label">
-                <span>05</span><div><b>E2B SDK API</b><small>Sandbox service calls</small></div>
+                <span>04</span><div><b>E2B SDK API</b><small>Sandbox service calls</small></div>
               </div>
               <div class="sdk-head-actions">
                 <span class="calls-count" id="calls-count">0</span>

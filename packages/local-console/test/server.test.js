@@ -300,7 +300,9 @@ test("web UI exposes a single reset button, parallel observability cards, and 5-
   assert.match(styles, /\.phone-frame\s*\{[^}]*max-width:\s*100%/);
   // service-workbench is a 2-row layout; top row is the parallel architecture + objects
   assert.match(styles, /\.service-workbench\s*\{[\s\S]*?grid-template-rows:\s*minmax\(0,\s*1fr\)\s+minmax\(0,\s*1\.05fr\)/);
-  assert.match(styles, /\.observability-top\s*\{[\s\S]*?grid-template-columns:\s*minmax\(0,\s*1\.15fr\)\s+minmax\(0,\s*1fr\)/);
+  // After removing the ACS CLUSTER card the two remaining cards sit
+  // side-by-side as equal columns.
+  assert.match(styles, /\.observability-top\s*\{[\s\S]*?grid-template-columns:\s*minmax\(0,\s*1fr\)\s+minmax\(0,\s*1fr\)/);
   assert.doesNotMatch(styles, /\.cloud-entry/);
   assert.doesNotMatch(styles, /\.mini-metrics/);
   assert.match(styles, /\.api-table-head,\s*\.api-row\s*\{[\s\S]*?grid-template-columns:\s*minmax\(120px,\s*1\.05fr\)\s+minmax\(150px,\s*1\.25fr\)\s+minmax\(120px,\s*1fr\)\s+88px\s+64px/);

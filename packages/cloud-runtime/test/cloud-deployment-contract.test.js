@@ -40,7 +40,11 @@ test("APP release tags publish a dedicated immutable container", async () => {
   assert.match(workflow, /app-v\*/);
   assert.match(workflow, /deploy\/alicloud-app\/Dockerfile/);
   assert.match(workflow, /onyxclaw-app/);
-  assert.match(workflow, /steps\.build\.outputs\.digest/);
+  // The registry push and the Docker-format archive are emitted by
+  // separate buildx invocations; provenance/SBOM live on the push step.
+  assert.match(workflow, /push:\s*true/);
+  assert.match(workflow, /type=docker[^\n]*dest=/);
+  assert.match(workflow, /steps\.push\.outputs\.digest/);
   assert.match(workflow, /packages:\s*write/);
   assert.doesNotMatch(workflow, /uses:\s+[^\s]+@v\d+/);
 });

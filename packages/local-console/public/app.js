@@ -1,7 +1,7 @@
 import { resolveLandingView } from "./ui-state.js";
 import { architectureStateFor, formatDuration } from "./observability-ui.js";
 import { calculateViewportFit } from "./viewport-fit.js";
-import { acsClusterPresentation, runtimePresentation } from "./runtime-ui.js";
+import { runtimePresentation } from "./runtime-ui.js";
 
 if ("scrollRestoration" in history) history.scrollRestoration = "manual";
 window.scrollTo(0, 0);
@@ -67,15 +67,7 @@ const elements = {
   runtimeSandboxId: document.querySelector("#runtime-sandbox-id"),
   runtimeInstanceId: document.querySelector("#runtime-instance-id"),
   runtimeConnectionId: document.querySelector("#runtime-connection-id"),
-  clusterCard: document.querySelector("#cluster-card"),
-  clusterProvider: document.querySelector("#cluster-provider"),
-  clusterRegion: document.querySelector("#cluster-region"),
-  clusterRegionChip: document.querySelector("#cluster-region-chip"),
-  clusterTemplate: document.querySelector("#cluster-template"),
-  clusterE2bHost: document.querySelector("#cluster-e2b-host"),
-  clusterGatewayPort: document.querySelector("#cluster-gateway-port"),
-  clusterProtocol: document.querySelector("#cluster-protocol"),
-  clusterCapabilities: document.querySelector("#cluster-capabilities"),
+  enterLobsterMode: document.querySelector("#enter-lobster-mode"),
 };
 
 let helloShown = false;
@@ -108,46 +100,10 @@ function applyRuntimePresentation(config) {
   const presentation = runtimePresentation(config);
   elements.environmentLabel.textContent = presentation.environmentLabel;
   elements.modeCopy.textContent = presentation.modeCopy;
-  const cluster = acsClusterPresentation(config);
-  renderClusterCard(cluster, config);
-  elements.runtimeStrip.hidden = !cluster;
-}
-
-function renderClusterCard(cluster, config) {
-  if (!cluster) {
-    elements.clusterCard.hidden = true;
-    elements.clusterCapabilities.replaceChildren();
-    return;
-  }
-  elements.clusterCard.hidden = false;
-  const providerLabel = config.providerName || config.providerId || "cloud";
-  elements.clusterProvider.textContent = providerLabel;
-  elements.clusterRegion.textContent = cluster.region || "—";
-  elements.clusterRegionChip.textContent = (cluster.region || "—").toUpperCase();
-  elements.clusterTemplate.textContent = cluster.templateId || "—";
-  elements.clusterE2bHost.textContent = cluster.e2bHost || "—";
-  elements.clusterGatewayPort.textContent =
-    cluster.gatewayPort === null || cluster.gatewayPort === undefined
-      ? "—"
-      : String(cluster.gatewayPort);
-  elements.clusterProtocol.textContent = cluster.protocol || "—";
-  elements.clusterCapabilities.replaceChildren();
-  const capabilityEntries = cluster.capabilities
-    ? Object.entries(cluster.capabilities)
-    : [];
-  if (!capabilityEntries.length) {
-    const placeholder = document.createElement("li");
-    placeholder.className = "off";
-    placeholder.textContent = "无能力声明";
-    elements.clusterCapabilities.append(placeholder);
-    return;
-  }
-  for (const [name, enabled] of capabilityEntries) {
-    const item = document.createElement("li");
-    item.className = enabled ? "" : "off";
-    item.textContent = `${enabled ? "●" : "○"} ${name}`;
-    elements.clusterCapabilities.append(item);
-  }
+  // The runtime strip is shown only in cloud mode (when the provider is
+  // configured) so local macOS mode keeps the original phone layout.
+  const cloud = config.deploymentMode === "cloud";
+  elements.runtimeStrip.hidden = !cloud;
 }
 
 function renderRuntimeStrip(status) {
@@ -180,6 +136,10 @@ function renderStatus(status) {
   const landing = resolveLandingView({ initialLanding, status });
   elements.resetUser.textContent = busy ? "正在重置…" : "重置新用户";
   elements.resetUser.disabled = busy;
+  // The phone's CTA button only makes sense before a sandbox exists.
+  elements.enterLobsterMode.disabled = busy;
+  elements.enterLobsterMode.hidden = status.mode !== "idle";
+  elements.enterLobsterMode.textContent = busy ? "正在进入…" : "进入龙虾模式";
   elements.chatInput.disabled = !chatReady;
   elements.send.disabled = !chatReady;
   elements.chatState.textContent = chatReady ? "已连接 · 可以发送" : "等待完成设置";
@@ -472,6 +432,14 @@ elements.resetUser.addEventListener("click", async () => {
   } else {
     await disconnectAndReset();
   }
+});
+
+// The big CTA inside the phone only triggers when no sandbox exists yet.
+// Once a Sandbox is allocated/connected the button is hidden and the
+// remaining flow (SOUL confirm + chat) takes over.
+elements.enterLobsterMode.addEventListener("click", async () => {
+  if (elements.enterLobsterMode.disabled) return;
+  await enterLobsterMode();
 });
 
 elements.reloadSoul.addEventListener("click", loadSoul);
