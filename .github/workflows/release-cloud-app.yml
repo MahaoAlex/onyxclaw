@@ -49,7 +49,7 @@ jobs:
       # so GHCR consumers receive supply-chain attestations.
       - name: Build and push cloud APP to GHCR
         id: push
-        uses: docker/build-push-action@f9f3042f7e2789586610d8b85c8f03e5195baf # v7.2.0
+        uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
         with:
           context: .
           file: deploy/alicloud-app/Dockerfile
@@ -75,7 +75,7 @@ jobs:
       # manifest-list packaging.
       - name: Build Docker-format archive for multi-cloud distribution
         id: archive
-        uses: docker/build-push-action@f9f3042f7e2789586610d8b85c8f03e5195baf # v7.2.0
+        uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
         with:
           context: .
           file: deploy/alicloud-app/Dockerfile
