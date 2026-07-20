@@ -82,6 +82,30 @@ test("Phase 1 API exposes status, lobster mode, SOUL, and chat", async (t) => {
   assert.equal(chat.text, "reply:hello");
 });
 
+test("UI config exposes safe runtime identity without provider secrets", async (t) => {
+  const app = createLocalConsoleServer({
+    controller: createController(),
+    host: "127.0.0.1",
+    port: 0,
+    uiConfig: {
+      deploymentMode: "cloud",
+      providerId: "alicloud-acs",
+      providerName: "Alibaba Cloud ACS Agent Sandbox",
+    },
+  });
+  await app.start();
+  t.after(() => app.stop({ cleanup: false }));
+
+  const config = await fetch(`${app.url}/api/ui-config`).then((response) => response.json());
+
+  assert.deepEqual(config, {
+    deploymentMode: "cloud",
+    providerId: "alicloud-acs",
+    providerName: "Alibaba Cloud ACS Agent Sandbox",
+  });
+  assert.doesNotMatch(JSON.stringify(config), /apiKey|secret|baseUrl/i);
+});
+
 test("API rejects malformed JSON and unknown routes", async (t) => {
   const app = createLocalConsoleServer({
     controller: createController(),
@@ -211,6 +235,9 @@ test("web UI exposes a phone workflow plus architecture and API observability", 
   assert.match(html, /性格设定/);
   assert.match(html, /对话龙虾/);
   assert.match(html, /id="reset-user"/);
+  assert.match(html, /id="cloud-entry"/);
+  assert.match(html, /data-user-type="new"/);
+  assert.match(html, /id="sandbox-id"/);
   assert.match(html, /重置新用户/);
   assert.match(html, /确认性格并继续/);
   assert.match(html, /data-step="soul"/);

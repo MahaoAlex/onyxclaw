@@ -30,3 +30,11 @@ APP 默认只创建 ClusterIP Service。浏览器联调使用：
 kubectl --kubeconfig iac/alicloud-acs/generated/kubeconfig \
   port-forward service/onyxclaw-app 3000:3000
 ```
+
+云端 BFF 会通过 `/api/ui-config` 只向浏览器暴露运行模式、Provider ID 和展示名称，
+不会下发 Endpoint、API Key 或 Channel Secret。同一份前端在云端会自动切换为 ACS 样式：
+
+- 全新用户选择“创建云端 Sandbox”，完成创建后进入 `SOUL.md` 确认；
+- 存量用户选择“已有 Sandbox”，输入 Sandbox ID，并可选输入原 OpenClaw Instance ID；
+- 手机区域显示 Sandbox/Runtime/Connection 状态；右侧只记录 E2B 兼容的 Sandbox
+  Service API、后端对象及耗时，不记录 OpenClaw 与模型交互耗时。

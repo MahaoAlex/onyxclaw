@@ -50,8 +50,14 @@ export function createLocalConsoleServer({
   port = 3000,
   publicDirectory = defaultPublicDirectory,
   operationMonitor = createSandboxServiceMonitor(),
+  uiConfig = {},
 }) {
   let server;
+  const publicUiConfig = {
+    deploymentMode: uiConfig.deploymentMode === "cloud" ? "cloud" : "local",
+    ...(uiConfig.providerId ? { providerId: uiConfig.providerId } : {}),
+    ...(uiConfig.providerName ? { providerName: uiConfig.providerName } : {}),
+  };
 
   async function handleApi(request, response, pathname) {
     if (
@@ -62,6 +68,9 @@ export function createLocalConsoleServer({
     }
     if (request.method === "GET" && pathname === "/api/status") {
       return sendJson(response, 200, controller.getStatus());
+    }
+    if (request.method === "GET" && pathname === "/api/ui-config") {
+      return sendJson(response, 200, publicUiConfig);
     }
     if (request.method === "GET" && pathname === "/api/observability") {
       return sendJson(response, 200, operationMonitor.snapshot());

@@ -63,6 +63,11 @@ const controller = new CloudConsoleController({
 const app = createLocalConsoleServer({
   controller,
   operationMonitor,
+  uiConfig: {
+    deploymentMode: "cloud",
+    providerId: "alicloud-acs",
+    providerName: provider.displayName,
+  },
   host: process.env.APP_HOST ?? "0.0.0.0",
   port: Number(process.env.APP_PORT ?? "3000"),
 });

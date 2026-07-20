@@ -50,4 +50,6 @@ test("cloud APP shares Sandbox Service telemetry between the ACS adapter and UI"
   assert.match(source, /createSandboxServiceMonitor/);
   assert.match(source, /createAlibabaAcsAdapter\(\{[\s\S]*operationMonitor/);
   assert.match(source, /createLocalConsoleServer\(\{[\s\S]*operationMonitor/);
+  assert.match(source, /deploymentMode:\s*"cloud"/);
+  assert.match(source, /providerId:\s*"alicloud-acs"/);
 });

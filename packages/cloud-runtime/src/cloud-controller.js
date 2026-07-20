@@ -72,14 +72,23 @@ export class CloudConsoleController {
     this.#status = { ...this.#status, mode: "starting", error: null };
     try {
       if (sandboxId) {
+        const instanceId = savedInstanceId || sandboxId;
+        this.#status = {
+          ...this.#status,
+          sandboxId,
+          instanceId,
+          connectionId: null,
+        };
         await this.#adapter.connectSandbox(sandboxId);
+        const connection = this.#simulator
+          ? await this.#simulator.waitForConnection(instanceId, { timeoutMs: this.#timeoutMs })
+          : null;
         this.#status = {
           ...this.#status,
           mode: "connected",
           currentStep: "chat",
           soulConfirmed: true,
-          sandboxId,
-          instanceId: savedInstanceId || sandboxId,
+          connectionId: connection?.connectionId ?? null,
         };
         return this.getStatus();
       }

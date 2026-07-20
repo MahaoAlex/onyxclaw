@@ -67,6 +67,37 @@ test("existing users connect by Sandbox ID and skip personality confirmation", a
   assert.deepEqual(calls, [["connect", "saved-sandbox"]]);
 });
 
+test("existing users wait for the resumed OpenClaw Channel before chat is enabled", async () => {
+  const { calls } = fixture();
+  const waits = [];
+  const controller = new CloudConsoleController({
+    adapter: {
+      async connectSandbox(id) {
+        calls.push(["connect", id]);
+        return { sandboxId: id, status: "running" };
+      },
+    },
+    saga: {},
+    simulator: {
+      async waitForConnection(instanceId, options) {
+        waits.push([instanceId, options]);
+        return { connectionId: "resumed-connection" };
+      },
+    },
+    buildConfig: () => ({}),
+    timeoutMs: 30_000,
+  });
+
+  const status = await controller.startLobsterMode({
+    sandboxId: "saved-sandbox",
+    instanceId: "saved-claw",
+  });
+
+  assert.deepEqual(waits, [["saved-claw", { timeoutMs: 30_000 }]]);
+  assert.equal(status.connectionId, "resumed-connection");
+  assert.equal(status.mode, "connected");
+});
+
 test("stop kills the cloud Sandbox and resets the serial flow", async () => {
   const { calls, controller } = fixture();
   await controller.startLobsterMode();

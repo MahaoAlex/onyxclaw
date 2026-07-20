@@ -1,6 +1,11 @@
 import { resolveLandingView } from "./ui-state.js";
 import { architectureStateFor, formatDuration } from "./observability-ui.js";
 import { calculateViewportFit } from "./viewport-fit.js";
+import {
+  buildStartPayload,
+  cloudStartLabel,
+  runtimePresentation,
+} from "./runtime-ui.js";
 
 if ("scrollRestoration" in history) history.scrollRestoration = "manual";
 window.scrollTo(0, 0);
@@ -65,10 +70,20 @@ const elements = {
   apiCallList: document.querySelector("#api-call-list"),
   pollStatus: document.querySelector("#poll-status"),
   activeOperation: document.querySelector("#active-operation"),
+  environmentLabel: document.querySelector("#environment-label"),
+  modeCopy: document.querySelector("#mode-copy"),
+  cloudEntry: document.querySelector("#cloud-entry"),
+  existingSandboxFields: document.querySelector("#existing-sandbox-fields"),
+  sandboxId: document.querySelector("#sandbox-id"),
+  instanceId: document.querySelector("#instance-id"),
+  primaryMetricLabel: document.querySelector("#metric-primary-label"),
+  secondaryMetricLabel: document.querySelector("#metric-secondary-label"),
 };
 let helloShown = false;
 let helloLoading = false;
 let initialLanding = true;
+let uiConfig = { deploymentMode: "local" };
+let cloudUserType = "new";
 
 async function api(path, options = {}) {
   const response = await fetch(path, {
@@ -89,6 +104,15 @@ function notice(element, message, error = false) {
   element.hidden = !message;
 }
 
+function applyRuntimePresentation(config) {
+  const presentation = runtimePresentation(config);
+  elements.environmentLabel.textContent = presentation.environmentLabel;
+  elements.modeCopy.textContent = presentation.modeCopy;
+  elements.cloudEntry.hidden = !presentation.cloud;
+  elements.primaryMetricLabel.textContent = presentation.primaryMetricLabel;
+  elements.secondaryMetricLabel.textContent = presentation.secondaryMetricLabel;
+}
+
 function renderStatus(status) {
   const labels = {
     idle: "尚未连接",
@@ -100,8 +124,13 @@ function renderStatus(status) {
   elements.status.className = `status-pill ${status.mode}`;
   elements.statusText.textContent = labels[status.mode] ?? status.mode;
   elements.metricMode.textContent = status.mode.toUpperCase();
-  elements.metricInstance.textContent = status.instanceId ?? "local-mac";
-  elements.metricGateway.textContent = status.gateway?.ok ? "HEALTHY" : "待检查";
+  const cloud = uiConfig.deploymentMode === "cloud";
+  elements.metricInstance.textContent = cloud
+    ? (status.sandboxId ?? "—")
+    : (status.instanceId ?? "local-mac");
+  elements.metricGateway.textContent = cloud
+    ? (status.instanceId ?? "—")
+    : (status.gateway?.ok ? "HEALTHY" : "待检查");
   elements.metricConnection.textContent = status.connectionId ?? "—";
   const connected = status.mode === "connected";
   const allocated = status.mode === "allocated";
@@ -109,6 +138,9 @@ function renderStatus(status) {
   const busy = status.mode === "starting";
   const landing = resolveLandingView({ initialLanding, status });
   elements.start.textContent = landing.startLabel;
+  if (cloud && status.mode === "idle") {
+    elements.start.textContent = cloudStartLabel(cloudUserType);
+  }
   elements.start.disabled = landing.startDisabled;
   elements.stop.disabled = (!connected && !allocated) || busy;
   elements.chatInput.disabled = !chatReady;
@@ -320,7 +352,16 @@ elements.start.addEventListener("click", async () => {
   if (current.mode === "connected") elements.start.disabled = true;
   else renderStatus({ ...current, mode: "starting" });
   try {
-    const status = await api("/api/lobster/start", { method: "POST" });
+    const payload = buildStartPayload({
+      deploymentMode: uiConfig.deploymentMode,
+      userType: cloudUserType,
+      sandboxId: elements.sandboxId.value,
+      instanceId: elements.instanceId.value,
+    });
+    const status = await api("/api/lobster/start", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
     renderStatus(status);
     notice(elements.modeNotice, "龙虾模式已就绪，可以编辑性格或开始对话。");
   } catch (error) {
@@ -329,9 +370,22 @@ elements.start.addEventListener("click", async () => {
   }
 });
 
+document.querySelectorAll("[data-user-type]").forEach((button) => {
+  button.addEventListener("click", () => {
+    cloudUserType = button.dataset.userType;
+    document.querySelectorAll("[data-user-type]").forEach((item) =>
+      item.classList.toggle("active", item === button));
+    elements.existingSandboxFields.hidden = cloudUserType !== "existing";
+    elements.start.textContent = cloudStartLabel(cloudUserType);
+    scheduleViewportFit();
+  });
+});
+
 elements.stop.addEventListener("click", async () => {
   elements.stop.disabled = true;
-  notice(elements.modeNotice, "正在禁用测试 Channel 并清理连接…");
+  notice(elements.modeNotice, uiConfig.deploymentMode === "cloud"
+    ? "正在清理云端 Sandbox 和 Channel 连接…"
+    : "正在禁用测试 Channel 并清理连接…");
   try {
     renderStatus(await api("/api/lobster/stop", { method: "POST" }));
     notice(elements.modeNotice, "连接与测试资源已清理。");
@@ -429,6 +483,8 @@ elements.chatStop.addEventListener("click", async () => {
   }
 });
 
+uiConfig = await api("/api/ui-config");
+applyRuntimePresentation(uiConfig);
 await Promise.all([refreshStatus(), loadSoul(), refreshObservability()]);
 scheduleViewportFit();
 setInterval(() => void refreshObservability(), 750);

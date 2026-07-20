@@ -17,7 +17,7 @@
             <span>Sandbox Experience Lab</span>
           </div>
         </div>
-        <div class="environment-chip"><i></i> LIVE TEST ENVIRONMENT</div>
+        <div class="environment-chip"><i></i><span id="environment-label">LOCAL MACOS</span></div>
       </header>
 
       <section class="workbench">
@@ -56,7 +56,17 @@
                     <div class="lobster-orbit" aria-hidden="true"><span>⌁</span></div>
                     <p>OPENCLAW COMPANION</p>
                     <h1>进入<br /><em>龙虾模式</em></h1>
-                    <p class="mobile-copy">连接你的 OpenClaw，创建一只拥有专属性格的智能龙虾。</p>
+                    <p class="mobile-copy" id="mode-copy">连接这台 Mac 上的 OpenClaw，创建一只拥有专属性格的智能龙虾。</p>
+                  </div>
+                  <div class="cloud-entry" id="cloud-entry" hidden>
+                    <div class="user-type-switch" role="group" aria-label="云端用户类型">
+                      <button class="active" type="button" data-user-type="new">全新用户</button>
+                      <button type="button" data-user-type="existing">已有 Sandbox</button>
+                    </div>
+                    <div class="existing-sandbox-fields" id="existing-sandbox-fields" hidden>
+                      <input id="sandbox-id" autocomplete="off" placeholder="Sandbox ID（必填）" />
+                      <input id="instance-id" autocomplete="off" placeholder="OpenClaw Instance ID（可选）" />
+                    </div>
                   </div>
                   <div class="mode-actions">
                     <button class="button button-primary" id="start-mode">进入龙虾模式 <span>→</span></button>
@@ -65,8 +75,8 @@
                   <div class="notice" id="mode-notice" hidden></div>
                   <dl class="mini-metrics">
                     <div><dt>MODE</dt><dd id="metric-mode">IDLE</dd></div>
-                    <div><dt>INSTANCE</dt><dd id="metric-instance">local-mac</dd></div>
-                    <div><dt>GATEWAY</dt><dd id="metric-gateway">待检查</dd></div>
+                    <div><dt id="metric-primary-label">INSTANCE</dt><dd id="metric-instance">local-mac</dd></div>
+                    <div><dt id="metric-secondary-label">GATEWAY</dt><dd id="metric-gateway">待检查</dd></div>
                     <div><dt>CONNECTION</dt><dd id="metric-connection">—</dd></div>
                   </dl>
                 </section>
