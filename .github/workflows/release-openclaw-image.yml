@@ -60,7 +60,11 @@ jobs:
         with:
           context: .
           file: iac/alicloud-acs/image/Dockerfile
-          platforms: linux/amd64
+          # We deliberately do NOT pass `platforms:` so buildx builds the
+          # runner's native architecture (linux/amd64 on ubuntu-latest). The
+          # legacy `platforms: linux/amd64` produces a manifest list, which
+          # the Docker-format exporter (`type=docker`) cannot serialise
+          # ("docker exporter does not support exporting manifest lists").
           pull: true
           tags: ${{ steps.release.outputs.image_ref }}
           labels: |

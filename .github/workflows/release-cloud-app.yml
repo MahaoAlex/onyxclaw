@@ -47,11 +47,15 @@ jobs:
 
       - name: Build and publish cloud APP, and export Docker archive
         id: build
-        uses: docker/build-push-action@f9f3042f7e2789586610d8b85c8f03e5195baf # v7.2.0
+        uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
         with:
           context: .
           file: deploy/alicloud-app/Dockerfile
-          platforms: linux/amd64
+          # We deliberately do NOT pass `platforms:` so buildx builds the
+          # runner's native architecture (linux/amd64 on ubuntu-latest). The
+          # legacy `platforms: linux/amd64` produces a manifest list, which
+          # the Docker-format exporter (`type=docker`) cannot serialise
+          # ("docker exporter does not support exporting manifest lists").
           tags: ${{ steps.release.outputs.image_ref }}
           outputs: |
             type=registry,name=${{ steps.release.outputs.image_ref }},push=true
