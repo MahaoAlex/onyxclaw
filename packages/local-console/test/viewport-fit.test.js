@@ -12,7 +12,8 @@ test("desktop workbench scales down and centers when rendered content is taller 
   }), {
     enabled: true,
     scale: 0.82,
-    left: 146,
+    renderWidth: 1727,
+    left: 12,
   });
 });
 
@@ -25,7 +26,8 @@ test("desktop workbench remains unscaled when it already fits", () => {
   }), {
     enabled: true,
     scale: 1,
-    left: 20,
+    renderWidth: 1416,
+    left: 12,
   });
 });
 
@@ -38,6 +40,22 @@ test("mobile layout keeps natural document flow", () => {
   }), {
     enabled: false,
     scale: 1,
+    renderWidth: null,
     left: 0,
+  });
+});
+
+test("desktop fit keeps a configurable horizontal safety gutter", () => {
+  assert.deepEqual(calculateViewportFit({
+    viewportWidth: 1280,
+    viewportHeight: 720,
+    contentWidth: 1240,
+    contentHeight: 900,
+    horizontalGutter: 20,
+  }), {
+    enabled: true,
+    scale: 0.8,
+    renderWidth: 1550,
+    left: 20,
   });
 });

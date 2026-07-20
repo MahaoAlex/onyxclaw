@@ -13,6 +13,7 @@ function fitWorkspaceToViewport() {
   workspace.classList.remove("viewport-fitted");
   workspace.style.removeProperty("left");
   workspace.style.removeProperty("transform");
+  workspace.style.removeProperty("width");
   const contentWidth = workspace.offsetWidth;
   const contentHeight = Math.max(workspace.scrollHeight, workspace.offsetHeight);
   const fit = calculateViewportFit({
@@ -23,6 +24,7 @@ function fitWorkspaceToViewport() {
   });
   if (!fit.enabled) return;
   workspace.classList.add("viewport-fitted");
+  workspace.style.width = `${fit.renderWidth}px`;
   workspace.style.left = `${fit.left}px`;
   workspace.style.transform = `scale(${fit.scale})`;
   window.scrollTo(0, 0);
