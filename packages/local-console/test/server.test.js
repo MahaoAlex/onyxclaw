@@ -225,8 +225,12 @@ test("web UI exposes a phone workflow plus architecture and API observability", 
   assert.match(styles, /body\s*\{[^}]*overflow-y:\s*auto/);
   assert.doesNotMatch(styles, /body\s*\{[^}]*overflow:\s*hidden/);
   assert.match(styles, /\.workbench\s*\{[\s\S]*?height:\s*calc\(100dvh - 84px\)/);
+  assert.match(styles, /grid-template-columns:\s*minmax\(270px,\s*min\(430px,\s*30vw\)\)\s+minmax\(0,\s*1fr\)/);
   assert.match(styles, /\.phone-frame\s*\{[\s\S]*?aspect-ratio:\s*410\s*\/\s*810/);
+  assert.match(styles, /\.phone-frame\s*\{[^}]*max-width:\s*100%/);
   assert.match(styles, /\.service-workbench\s*\{[\s\S]*?grid-template-rows:\s*minmax\(0,/);
+  assert.doesNotMatch(styles, /@media\s*\(max-width:\s*860px\)/);
+  assert.match(styles, /@media\s*\(max-width:\s*680px\)/);
   assert.doesNotMatch(styles, /phone-hardware\s*\{[^}]*display:\s*none/);
   assert.match(styles, /\.composer textarea\s*\{[\s\S]*?caret-color:\s*var\(--coral-dark\)/);
   assert.match(browserApp, /history\.scrollRestoration\s*=\s*"manual"/);
