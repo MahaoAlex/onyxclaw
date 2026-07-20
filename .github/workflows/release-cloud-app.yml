@@ -45,30 +45,49 @@ jobs:
       - name: Set up Buildx
         uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4.0.0
 
-      - name: Build and publish cloud APP, and export Docker archive
-        id: build
-        uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
+      # Step A: build once and push the registry image with provenance + SBOM
+      # so GHCR consumers receive supply-chain attestations.
+      - name: Build and push cloud APP to GHCR
+        id: push
+        uses: docker/build-push-action@f9f3042f7e2789586610d8b85c8f03e5195baf # v7.2.0
         with:
           context: .
           file: deploy/alicloud-app/Dockerfile
-          # We deliberately do NOT pass `platforms:` so buildx builds the
-          # runner's native architecture (linux/amd64 on ubuntu-latest). The
-          # legacy `platforms: linux/amd64` produces a manifest list, which
-          # the Docker-format exporter (`type=docker`) cannot serialise
-          # ("docker exporter does not support exporting manifest lists").
+          push: true
           tags: ${{ steps.release.outputs.image_ref }}
-          outputs: |
-            type=registry,name=${{ steps.release.outputs.image_ref }},push=true
-            type=docker,dest=/tmp/${{ steps.release.outputs.artifact }}.tar
           cache-from: type=gha
           cache-to: type=gha,mode=max
           provenance: mode=max
           sbom: true
 
+      # Step B: separate build that emits a Docker-format tarball
+      # (manifest.json + repositories + layer tarballs) loadable on any
+      # Docker Engine >= 24.0 via `docker load`. We MUST NOT combine this
+      # with step A in a single multi-output build, because the `docker`
+      # exporter refuses to serialise the manifest list produced for the
+      # registry target:
+      #
+      #   ERROR: failed to build: docker exporter does not support
+      #   exporting manifest lists, use the oci exporter instead
+      #
+      # The GHA cache from step A keeps the rebuild cheap. Provenance and
+      # SBOM are turned off for step B because they reintroduce
+      # manifest-list packaging.
+      - name: Build Docker-format archive for multi-cloud distribution
+        id: archive
+        uses: docker/build-push-action@f9f3042f7e2789586610d8b85c8f03e5195baf # v7.2.0
+        with:
+          context: .
+          file: deploy/alicloud-app/Dockerfile
+          load: true
+          tags: onyxclaw-app:archive-build
+          outputs: type=docker,dest=/tmp/${{ steps.release.outputs.artifact }}.tar
+          cache-from: type=gha
+
       - name: Prepare release assets
         shell: bash
         env:
-          IMAGE_DIGEST: ${{ steps.build.outputs.digest }}
+          IMAGE_DIGEST: ${{ steps.push.outputs.digest }}
           IMAGE_REF: ${{ steps.release.outputs.image_ref }}
           RELEASE_TAG: ${{ steps.release.outputs.tag }}
           ARCHIVE_NAME: ${{ steps.release.outputs.artifact }}
@@ -80,10 +99,10 @@ jobs:
           fi
 
           mkdir -p release
-          # Docker-format tarball (manifest.json + repositories + layer tarballs) is
-          # directly loadable on any Docker Engine >= 24.0 via `docker load`. Multi-cloud
-          # environments can mirror the archive to ACR / SWR / GCR / ECR without
-          # having to re-tag or re-pull from GHCR.
+          # Docker-format tarball (manifest.json + repositories + layer tarballs)
+          # is directly loadable on any Docker Engine >= 24.0 via `docker load`.
+          # Multi-cloud environments can mirror the archive to ACR / SWR / GCR /
+          # ECR without re-tagging or re-pulling from GHCR.
           gzip -9 < "/tmp/${ARCHIVE_NAME}.tar" > "release/${ARCHIVE_NAME}.tar.gz"
           archive_size="$(stat -c '%s' "release/${ARCHIVE_NAME}.tar.gz")"
           if (( archive_size >= 2147483648 )); then
@@ -152,7 +171,7 @@ jobs:
           {
             echo "### Published cloud APP image"
             echo
-            echo '\`${{ steps.release.outputs.image_ref }}@${{ steps.build.outputs.digest }}\`'
+            echo '\`${{ steps.release.outputs.image_ref }}@${{ steps.push.outputs.digest }}\`'
             echo
             echo "The matching Docker-format archive (\`${{ steps.release.outputs.artifact }}.tar.gz\`) and checksums are attached to GitHub Release ${{ steps.release.outputs.tag }}. Use \`docker load -i <archive>.tar.gz\` on any Docker 24.x host."
           } >> "${GITHUB_STEP_SUMMARY}"

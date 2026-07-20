@@ -54,35 +54,57 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4.0.0
 
-      - name: Build once, push to GHCR, and export Docker archive
-        id: build
+      # Step A: build once and push the registry image. Provenance + SBOM
+      # stay on for the registry image so GHCR consumers get supply-chain
+      # attestations.
+      - name: Build and push to GHCR
+        id: push
         uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
         with:
           context: .
           file: iac/alicloud-acs/image/Dockerfile
-          # We deliberately do NOT pass `platforms:` so buildx builds the
-          # runner's native architecture (linux/amd64 on ubuntu-latest). The
-          # legacy `platforms: linux/amd64` produces a manifest list, which
-          # the Docker-format exporter (`type=docker`) cannot serialise
-          # ("docker exporter does not support exporting manifest lists").
           pull: true
+          push: true
           tags: ${{ steps.release.outputs.image_ref }}
           labels: |
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
             org.opencontainers.image.revision=${{ github.sha }}
             org.opencontainers.image.version=${{ steps.release.outputs.tag }}
-          outputs: |
-            type=registry,name=${{ steps.release.outputs.image_ref }},push=true
-            type=docker,dest=/tmp/${{ steps.release.outputs.artifact }}.tar
           cache-from: type=gha
           cache-to: type=gha,mode=max
           provenance: mode=max
           sbom: true
 
+      # Step B: build a second time purely to produce the Docker-format
+      # archive (manifest.json + repositories + layer tarballs) that is
+      # directly loadable on any Docker Engine >= 24.0 via `docker load`.
+      #
+      # We MUST run this as a separate build because the `docker` exporter
+      # refuses to serialise the manifest list produced by a multi-output
+      # build that also targets a registry:
+      #
+      #   ERROR: failed to build: docker exporter does not support
+      #   exporting manifest lists, use the oci exporter instead
+      #
+      # We reuse the GHA cache populated by step A so we don't pay the
+      # full build cost twice. Provenance + SBOM are turned off here
+      # because they re-introduce manifest-list packaging.
+      - name: Build Docker-format archive for multi-cloud distribution
+        id: archive
+        uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
+        with:
+          context: .
+          file: iac/alicloud-acs/image/Dockerfile
+          pull: true
+          load: true
+          tags: onyxclaw-openclaw:archive-build
+          outputs: type=docker,dest=/tmp/${{ steps.release.outputs.artifact }}.tar
+          cache-from: type=gha
+
       - name: Prepare release assets
         shell: bash
         env:
-          IMAGE_DIGEST: ${{ steps.build.outputs.digest }}
+          IMAGE_DIGEST: ${{ steps.push.outputs.digest }}
           IMAGE_REF: ${{ steps.release.outputs.image_ref }}
           RELEASE_TAG: ${{ steps.release.outputs.tag }}
           ARCHIVE_NAME: ${{ steps.release.outputs.artifact }}
@@ -94,10 +116,10 @@ jobs:
           fi
 
           mkdir -p release
-          # Docker-format tarball (manifest.json + repositories + layer tarballs) is
-          # directly loadable on any Docker Engine >= 24.0 via `docker load`. Multi-cloud
-          # environments can mirror the archive to ACR / SWR / GCR / ECR without
-          # having to re-tag or re-pull from GHCR.
+          # Docker-format tarball (manifest.json + repositories + layer tarballs)
+          # is directly loadable on any Docker Engine >= 24.0 via `docker load`.
+          # Multi-cloud environments can mirror the archive to ACR / SWR / GCR /
+          # ECR without re-tagging or re-pulling from GHCR.
           gzip -9 < "/tmp/${ARCHIVE_NAME}.tar" > "release/${ARCHIVE_NAME}.tar.gz"
           archive_size="$(stat -c '%s' "release/${ARCHIVE_NAME}.tar.gz")"
           if (( archive_size >= 2147483648 )); then
@@ -166,7 +188,7 @@ jobs:
           {
             echo "### Published OpenClaw image"
             echo
-            echo '\`${{ steps.release.outputs.image_ref }}@${{ steps.build.outputs.digest }}\`'
+            echo '\`${{ steps.release.outputs.image_ref }}@${{ steps.push.outputs.digest }}\`'
             echo
-            echo "The matching Docker-format archive (\`${ARCHIVE_NAME}.tar.gz\`) and checksums are attached to GitHub Release ${{ steps.release.outputs.tag }}."
+            echo "The matching Docker-format archive (\`${{ steps.release.outputs.artifact }}.tar.gz\`) and checksums are attached to GitHub Release ${{ steps.release.outputs.tag }}. Use \`docker load -i <archive>.tar.gz\` on any Docker 24.x host."
           } >> "${GITHUB_STEP_SUMMARY}"
