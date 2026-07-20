@@ -526,7 +526,10 @@ E2B Files/Commands API、云端 WSS/TLS、Docker 部署、差异测试、webhook
 ### 10.4 阿里云 ACS 云端验收进度
 
 2026-07-19 已通过 IaC 创建真实 ACS 集群和预热池，使用固定 digest 的 OnyxClaw
-v0.1.2 Sandbox 镜像及 `app-v0.1.0` APP 镜像完成以下验证：
+v0.1.2 Sandbox 镜像完成基础验证。2026-07-20 将云端 APP 更新为 `app-v0.2.0`，其
+GHCR 与杭州 ACR 均校验为固定 digest
+`sha256:47876460c633152839de567d84add25b58536a7ae09a91d475b6b1ce06d65839`，并完成
+以下验证：
 
 | 云端验收项 | 结果 | 说明 |
 | --- | --- | --- |
@@ -537,6 +540,9 @@ v0.1.2 Sandbox 镜像及 `app-v0.1.0` APP 镜像完成以下验证：
 | `files.write/read` | 通过 | node 用户写读临时文件内容一致 |
 | Secret 边界 | 通过 | smoke 从 `e2b-key-store` 读取转换后的运行时 Key，不输出明文 |
 | APP 容器与 ClusterIP Service | 通过 | APP 从杭州 ACR 按 digest 拉取，在同一 ACS 集群内运行 |
+| 云端 UI 运行模式 | 通过 | BFF 只下发 cloud、Provider ID 和展示名；浏览器不接收 Endpoint 或 Secret |
+| 云端新/老用户入口 | 部分通过 | 新用户真实 E2E 通过；已有 Sandbox 的输入、connect 和 Channel 就绪等待已有自动化测试，pause/resume 实测待补 |
+| Sandbox Service 可观测面板 | 通过 | 仅展示 create/connect/kill、Files、Commands 调用、对象状态与耗时，不记录模型耗时 |
 | Provider/Secret 配置 | 通过 | E2B、MiniMax 和 Channel 凭据由 Kubernetes Secret 注入，不进入镜像和 Git |
 | 新用户串行流程 | 通过 | 领取暖池 Sandbox → 确认 Soul → 进入聊天，服务端门禁生效 |
 | OpenClaw bootstrap | 通过 | E2B Files 写入配置/Soul，Gateway 与 Channel 约 8 秒就绪 |
@@ -544,6 +550,12 @@ v0.1.2 Sandbox 镜像及 `app-v0.1.0` APP 镜像完成以下验证：
 | MiniMax 普通文字对话 | 通过 | 回复符合 Soul 性格，实测约 2.4 秒 |
 | Sandbox 清理 | 通过 | APP stop 调用 E2B kill，控制台回到 `idle/mode` |
 | connect/pause/resume | 待实施 | 纳入完整云端生命周期 E2E |
+
+`app-v0.2.0` 的一次真实新用户验收中，`Sandbox.create` 为 19,184 ms，两个
+`Files.write` 分别为 14 ms 和 2 ms，Gateway readiness 使用多次 `Commands.run`
+轮询后成功，首次 MiniMax 性格问候为 5,782 ms，最终 `Sandbox.kill` 为 17 ms。
+readiness 期间非零退出的 Commands 调用会如实显示为失败尝试，但最终成功探测决定
+Gateway 就绪；模型问候耗时只用于对话体验，不进入 Sandbox Service API 面板。
 
 可重复 smoke 位于 `iac/alicloud-acs/scripts/e2b-smoke.py`。本轮发现并修复了
 `/run/e2b` 权限和 envd 非 root 导致的进程创建失败；账户余额不足产生的失败 Sandbox
@@ -582,8 +594,10 @@ kill；pause/connect/resume 仍需后续补充。
 本机子阶段已于 2026-07-19 跑通：浏览器中的三个页签可管理当前 macOS 已安装的
 OpenClaw，按“龙虾模式 → 性格确认 → 对话”串行执行，完成 Channel 生命周期、
 `SOUL.md` 编辑/校验/恢复、服务端性格门禁、一次性性格问候和真实文字对话。
-同日云端子阶段也已将 APP 以容器部署到 ACS，并通过同集群私网完成新用户领取
+云端子阶段已将 APP 以容器部署到 ACS，并通过同集群私网完成新用户领取
 Sandbox、Soul 确认、OpenClaw/Channel 就绪、MiniMax 首次问候、普通文字对话和清理。
+2026-07-20 发布的 `app-v0.2.0` 进一步完成左右分屏云端 UI、运行环境自动识别、
+新用户/已有 Sandbox 入口和 Sandbox Service 专用可观测面板的真实部署验证。
 尚未完成的 Phase 1 项是 connect/pause/resume、JSON 报告下载和参考实现差异测试。
 
 ### Phase 2：按验证需求扩展

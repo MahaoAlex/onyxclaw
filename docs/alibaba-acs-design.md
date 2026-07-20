@@ -275,9 +275,13 @@ Secret 单独注入：Sandbox Team API Key、模型 API Key、Channel signing se
 - 曾因账户 `InsufficientBalance` 导致实例调度失败；充值后需删除旧失败 Sandbox，
   由 SandboxSet 重新创建，旧失败实例不会自动重试。
 
-云端基础设施、预热池和 E2B 生命周期/命令/文件最小闭环已经完成。下一步是实现
-Alibaba ACS E2B Adapter 与 bootstrap Saga，写入 OpenClaw 配置和 `SOUL.md`，再验证
-Gateway、Channel、首次 hello、对话、connect/pause/resume。Full E2E 完成后执行
+云端基础设施、预热池和 E2B 生命周期/命令/文件最小闭环已经完成。Alibaba ACS E2B
+Adapter、bootstrap Saga、`SOUL.md` 写入、Gateway/Channel、MiniMax 首次 hello、
+对话和 kill 已在真实 ACS 环境验证。2026-07-20 发布的云端 APP `app-v0.2.0` 使用
+固定 digest
+`sha256:47876460c633152839de567d84add25b58536a7ae09a91d475b6b1ce06d65839`，并完成
+Provider 感知 UI 和 Sandbox Service API 可观测面板验证。下一步集中验证已有 Sandbox
+的 connect/pause/resume 和 APP/Channel 跨重启状态恢复；Full E2E 完成后执行
 `destroy` 验证无遗留。
 
 ## 9. 参考资料
