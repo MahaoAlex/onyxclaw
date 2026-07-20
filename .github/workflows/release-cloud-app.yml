@@ -51,7 +51,6 @@ jobs:
           context: .
           file: deploy/alicloud-app/Dockerfile
           platforms: linux/amd64
-          push: true
           tags: ${{ steps.release.outputs.image_ref }}
           outputs: |
             type=registry,name=${{ steps.release.outputs.image_ref }},push=true
