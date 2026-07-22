@@ -294,7 +294,6 @@ function showStep(step, status = {}) {
   });
   if (step === "soul") void loadSoul();
   if (step === "chat" && status.soulConfirmed) void ensureHello();
-  scheduleViewportFit();
 }
 
 async function refreshStatus() {
@@ -334,7 +333,6 @@ function addMessage(role, text, metadata) {
   message.append(bubble, meta);
   elements.messages.append(message);
   elements.messages.scrollTop = elements.messages.scrollHeight;
-  scheduleViewportFit();
 }
 
 function resetChatView() {

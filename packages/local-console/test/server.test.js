@@ -331,4 +331,12 @@ test("web UI exposes a single reset button, parallel observability cards, and 5-
   assert.match(browserApp, /clearApiCallsUi/);
   assert.match(browserApp, /resolveTabState/);
   assert.match(browserApp, /document\.querySelectorAll\("\.tab"\)/);
+  assert.doesNotMatch(
+    browserApp,
+    /function showStep[\s\S]*?scheduleViewportFit\(\)[\s\S]*?async function refreshStatus/,
+  );
+  assert.doesNotMatch(
+    browserApp,
+    /function addMessage[\s\S]*?scheduleViewportFit\(\)[\s\S]*?function resetChatView/,
+  );
 });
