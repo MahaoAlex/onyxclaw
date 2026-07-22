@@ -161,7 +161,7 @@ test("wraps provider failures with a stage and redacts secrets", async () => {
   });
 });
 
-test("records real E2B SDK timings and backend objects without commands or file content", async () => {
+test("records real E2B SDK timings, operation details, and backend objects without file content", async () => {
   let now = 100;
   const operationMonitor = createSandboxServiceMonitor({ now: () => now });
   const { clientFactory } = fixture();
@@ -199,7 +199,15 @@ test("records real E2B SDK timings and backend objects without commands or file 
   ]);
   assert.equal(snapshot.calls[0].object.state, "terminated");
   assert.equal(snapshot.calls[1].object.state, "exited:0");
-  assert.doesNotMatch(JSON.stringify(snapshot), /private command|private file content|runtime-secret/);
+  assert.deepEqual(snapshot.calls[1].operationContext, {
+    label: "COMMAND",
+    value: "private command",
+  });
+  assert.deepEqual(snapshot.calls[2].operationContext, {
+    label: "PATH",
+    value: "/home/node/test.txt",
+  });
+  assert.doesNotMatch(JSON.stringify(snapshot), /private file content|runtime-secret/);
 });
 
 test("failed command telemetry includes the executed command with secrets redacted", async () => {
@@ -219,9 +227,9 @@ test("failed command telemetry includes the executed command with secrets redact
 
   const failed = operationMonitor.snapshot().calls[0];
   assert.equal(failed.state, "failed");
-  assert.equal(failed.failureContext.label, "COMMAND");
-  assert.match(failed.failureContext.value, /curl -H/);
-  assert.match(failed.failureContext.value, /--token \[REDACTED\]/);
+  assert.equal(failed.operationContext.label, "COMMAND");
+  assert.match(failed.operationContext.value, /curl -H/);
+  assert.match(failed.operationContext.value, /--token \[REDACTED\]/);
   assert.doesNotMatch(JSON.stringify(failed), /runtime-secret|hidden-value/);
 });
 

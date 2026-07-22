@@ -33,8 +33,8 @@ export function createSandboxServiceMonitor({
       durationMs: call.durationMs ?? Math.max(0, currentTime - call.startedAtMs),
       startedAt: new Date(call.startedAtMs).toISOString(),
       object: call.object,
-      ...(call.state === "failed" && call.failureContext
-        ? { failureContext: call.failureContext }
+      ...(call.operationContext
+        ? { operationContext: call.operationContext }
         : {}),
     };
   }
@@ -59,7 +59,7 @@ export function createSandboxServiceMonitor({
       history.length = 0;
       objects.clear();
     },
-    begin({ api, target, object, failureContext }) {
+    begin({ api, target, object, operationContext }) {
       const id = idFactory();
       const safe = remember(object);
       active.set(id, {
@@ -67,10 +67,10 @@ export function createSandboxServiceMonitor({
         api,
         target,
         object: safe,
-        failureContext: failureContext && typeof failureContext === "object"
-          && typeof failureContext.label === "string"
-          && typeof failureContext.value === "string"
-          ? { label: failureContext.label, value: failureContext.value }
+        operationContext: operationContext && typeof operationContext === "object"
+          && typeof operationContext.label === "string"
+          && typeof operationContext.value === "string"
+          ? { label: operationContext.label, value: operationContext.value }
           : null,
         state: "running",
         startedAtMs: now(),

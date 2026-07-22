@@ -63,7 +63,7 @@ export class AlibabaAcsAdapter {
       api: telemetry.api,
       target: telemetry.target,
       object: telemetry.object,
-      failureContext: telemetry.failureContext,
+      operationContext: telemetry.operationContext,
     });
     try {
       const result = await operation();
@@ -92,6 +92,7 @@ export class AlibabaAcsAdapter {
     return this.#perform("create", {
       api: "Sandbox.create",
       target: "Alibaba ACS Sandbox Manager",
+      operationContext: { label: "TEMPLATE", value: this.#provider.sandbox.templateId },
       resultObject: (result) => ({
         type: "Sandbox",
         id: result.sandboxId,
@@ -114,6 +115,7 @@ export class AlibabaAcsAdapter {
     return this.#perform("connect", {
       api: "Sandbox.connect",
       target: "Alibaba ACS Sandbox Manager",
+      operationContext: { label: "SANDBOX", value: id },
       object: { type: "Sandbox", id, state: "connecting" },
       resultObject: (result) => ({ type: "Sandbox", id: result.sandboxId, state: "running" }),
     }, async () => {
@@ -134,7 +136,7 @@ export class AlibabaAcsAdapter {
     return this.#perform("command", {
       api: "Commands.run",
       target: "Sandbox envd",
-      failureContext: {
+      operationContext: {
         label: "COMMAND",
         value: safeCommandSummary(command, this.#secrets),
       },
@@ -158,6 +160,7 @@ export class AlibabaAcsAdapter {
     return this.#perform("file-write", {
       api: "Files.write",
       target: "Sandbox envd",
+      operationContext: { label: "PATH", value: filePath },
       object: { type: "File", id: filePath, state: "writing" },
       resultObject: () => ({ type: "File", id: filePath, state: "written" }),
     }, async () => {
@@ -173,6 +176,7 @@ export class AlibabaAcsAdapter {
     return this.#perform("file-read", {
       api: "Files.read",
       target: "Sandbox envd",
+      operationContext: { label: "PATH", value: filePath },
       object: { type: "File", id: filePath, state: "reading" },
       resultObject: () => ({ type: "File", id: filePath, state: "read" }),
     }, async () => {
@@ -186,6 +190,7 @@ export class AlibabaAcsAdapter {
     return this.#perform("kill", {
       api: "Sandbox.kill",
       target: "Alibaba ACS Sandbox Manager",
+      operationContext: { label: "SANDBOX", value: id },
       object: { type: "Sandbox", id, state: "terminating" },
       resultObject: () => ({ type: "Sandbox", id, state: "terminated" }),
     }, async () => {
