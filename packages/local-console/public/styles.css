@@ -199,11 +199,24 @@ h1 em { color: var(--coral); font-weight: 500; }
 .resource-empty p { margin: 4px 0 0; font-size: 10px; }
 
 .sdk-card { display: flex; flex-direction: column; }
+.api-summary { display: flex; align-items: center; gap: 18px; min-height: 44px; padding: 8px 22px; border-bottom: 1px solid var(--line); background: rgba(0,0,0,.1); }
+.api-summary-counts { display: flex; flex: 0 0 auto; align-items: center; gap: 12px; color: #91a49f; font: 700 9px ui-monospace, monospace; white-space: nowrap; }
+.api-summary-counts b { margin-left: 3px; color: #eaf6f2; font-size: 11px; }
+.api-summary-counts .succeeded b { color: var(--mint); }
+.api-summary-counts .running b { color: var(--amber); }
+.api-summary-counts .failed b { color: var(--danger); }
+.failed-api-summary { display: flex; min-width: 0; align-items: center; gap: 9px; overflow: hidden; }
+.failed-api-summary[hidden] { display: none; }
+.failed-api-summary strong { flex: 0 0 auto; color: var(--danger); font: 750 8px ui-monospace, monospace; letter-spacing: .08em; }
+#failed-api-list { display: flex; min-width: 0; gap: 6px; overflow-x: auto; scrollbar-width: none; }
+#failed-api-list::-webkit-scrollbar { display: none; }
+.failed-api-item { flex: 0 0 auto; max-width: 180px; overflow: hidden; padding: 4px 7px; color: #ffb3a7; border: 1px solid rgba(255,114,94,.22); border-radius: 999px; background: rgba(255,114,94,.08); font: 750 8px ui-monospace, monospace; text-overflow: ellipsis; white-space: nowrap; }
 .api-table-head, .api-row { display: grid; grid-template-columns: minmax(120px, 1.05fr) minmax(150px, 1.25fr) minmax(120px, 1fr) 88px 64px; gap: 14px; align-items: center; }
 .api-table-head { padding: 12px 22px; color: #91a49f; border-bottom: 1px solid var(--line); font: 750 9px ui-monospace, monospace; letter-spacing: .12em; }
 .api-call-list { flex: 1; min-height: 0; overflow-y: auto; }
 .api-row { min-height: 58px; padding: 10px 22px; border-bottom: 1px solid rgba(186,219,210,.1); transition: background .2s; }
 .api-row:hover { background: rgba(255,255,255,.018); }
+.api-row.failed { background: linear-gradient(90deg, rgba(255,114,94,.09), transparent 45%); box-shadow: inset 2px 0 var(--danger); }
 .api-name { min-width: 0; }
 .api-name b { display: block; overflow: hidden; color: #f0faf6; font: 750 12px ui-monospace, monospace; text-overflow: ellipsis; white-space: nowrap; }
 .api-name small { display: block; margin-top: 4px; overflow: hidden; color: #758983; font: 8px ui-monospace, monospace; text-overflow: ellipsis; white-space: nowrap; }

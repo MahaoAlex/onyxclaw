@@ -1,5 +1,5 @@
 import { resolveLandingView, resolveTabState } from "./ui-state.js";
-import { architectureStateFor, formatDuration } from "./observability-ui.js";
+import { architectureStateFor, formatDuration, summarizeCalls } from "./observability-ui.js";
 import { calculateViewportFit } from "./viewport-fit.js";
 import { runtimePresentation } from "./runtime-ui.js";
 
@@ -59,6 +59,12 @@ const elements = {
   objectsCount: document.querySelector("#objects-count"),
   apiCallList: document.querySelector("#api-call-list"),
   callsCount: document.querySelector("#calls-count"),
+  callsTotal: document.querySelector("#calls-total"),
+  callsSucceeded: document.querySelector("#calls-succeeded"),
+  callsRunning: document.querySelector("#calls-running"),
+  callsFailed: document.querySelector("#calls-failed"),
+  failedApiSummary: document.querySelector("#failed-api-summary"),
+  failedApiList: document.querySelector("#failed-api-list"),
   pollStatus: document.querySelector("#poll-status"),
   activeOperation: document.querySelector("#active-operation"),
   environmentLabel: document.querySelector("#environment-label"),
@@ -191,6 +197,19 @@ function renderObjects(objects) {
 function renderCalls(calls) {
   currentCalls = calls;
   elements.apiCallList.replaceChildren();
+  const summary = summarizeCalls(calls);
+  elements.callsTotal.textContent = String(summary.total);
+  elements.callsSucceeded.textContent = String(summary.succeeded);
+  elements.callsRunning.textContent = String(summary.running);
+  elements.callsFailed.textContent = String(summary.failed);
+  elements.failedApiList.replaceChildren();
+  for (const failure of summary.failedApis) {
+    const item = document.createElement("span");
+    item.className = "failed-api-item";
+    item.textContent = `${failure.api} ×${failure.count}`;
+    elements.failedApiList.append(item);
+  }
+  elements.failedApiSummary.hidden = summary.failed === 0;
   if (!calls.length) {
     const empty = document.createElement("div");
     empty.className = "empty-activity";
@@ -205,7 +224,7 @@ function renderCalls(calls) {
   }
   for (const call of calls) {
     const row = document.createElement("article");
-    row.className = "api-row";
+    row.className = `api-row ${call.state}`;
     const name = document.createElement("div");
     name.className = "api-name";
     const apiName = document.createElement("b");
@@ -282,6 +301,12 @@ function clearApiCallsUi() {
   empty.append(glyph, copy);
   elements.apiCallList.append(empty);
   elements.callsCount.textContent = "0";
+  elements.callsTotal.textContent = "0";
+  elements.callsSucceeded.textContent = "0";
+  elements.callsRunning.textContent = "0";
+  elements.callsFailed.textContent = "0";
+  elements.failedApiList.replaceChildren();
+  elements.failedApiSummary.hidden = true;
 }
 
 function showStep(step, status = {}) {

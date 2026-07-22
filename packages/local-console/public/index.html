@@ -175,6 +175,18 @@
                 <span class="poll-status" id="poll-status">SYNCING</span>
               </div>
             </header>
+            <div class="api-summary" id="api-summary" aria-label="E2B SDK API 调用概要">
+              <div class="api-summary-counts">
+                <span>调用 <b id="calls-total">0</b></span>
+                <span class="succeeded">成功 <b id="calls-succeeded">0</b></span>
+                <span class="running">执行中 <b id="calls-running">0</b></span>
+                <span class="failed">失败 <b id="calls-failed">0</b></span>
+              </div>
+              <div class="failed-api-summary" id="failed-api-summary" hidden>
+                <strong>失败 API</strong>
+                <div id="failed-api-list"></div>
+              </div>
+            </div>
             <div class="api-table-head">
               <span>API</span>
               <span>OBJECT</span>

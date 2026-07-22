@@ -280,6 +280,8 @@ test("web UI exposes a single reset button, parallel observability cards, and 5-
   assert.match(html, /E2B SDK API/);
   assert.match(html, /id="architecture-map"/);
   assert.match(html, /id="api-call-list"/);
+  assert.match(html, /id="api-summary"/);
+  assert.match(html, /id="failed-api-list"/);
   assert.match(html, /id="resource-grid"/);
   // Removed multi-tenant entry controls
   assert.doesNotMatch(html, /id="cloud-entry"/);
@@ -311,6 +313,8 @@ test("web UI exposes a single reset button, parallel observability cards, and 5-
   assert.match(styles, /\.architecture-map\s*\{[^}]*width:\s*100%/);
   assert.match(styles, /\.api-name b\s*\{[^}]*font:\s*750 12px/);
   assert.match(styles, /\.api-duration\s*\{[^}]*font:\s*750 11px/);
+  assert.match(styles, /\.api-row\.failed\s*\{/);
+  assert.match(browserApp, /summarizeCalls\(calls\)/);
   assert.doesNotMatch(styles, /@media\s*\(max-width:\s*860px\)/);
   assert.match(styles, /@media\s*\(max-width:\s*1180px\)/);
   assert.match(styles, /@media\s*\(max-width:\s*680px\)/);
