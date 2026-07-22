@@ -1,6 +1,7 @@
 # Alibaba Cloud ACS disposable validation stack
 
-详细设计和安全边界见 [阿里云 ACS Agent Sandbox 对接设计](../../docs/alibaba-acs-design.md)。
+详细设计和安全边界见 [阿里云 ACS Agent Sandbox 对接设计](../../docs/alibaba-acs-design.md)，
+派生镜像的修改见 [OpenClaw 镜像的阿里云 ACS 适配说明](../../docs/openclaw-image-alibaba-acs-adaptation.md)。
 
 ## 一次性账号前置动作
 
@@ -23,9 +24,11 @@ git push origin v0.1.0
 `.github/workflows/release-openclaw-image.yml` 会在 GitHub 托管的 AMD64 Runner 上：
 
 1. 从官方 OpenClaw 镜像构建派生镜像；
-2. 一次构建同时推送 `ghcr.io/mahaoalex/onyxclaw-openclaw:v0.1.0` 并导出 OCI archive；
+2. 推送 `ghcr.io/mahaoalex/onyxclaw-openclaw:v0.1.0`，并通过独立构建导出可由
+   Docker Engine 24.x 加载的 Docker-format archive；
 3. 创建同名 GitHub Release；
-4. 附加压缩 OCI archive、registry manifest、`image-reference.txt` 和 SHA-256 校验和；
+4. 附加压缩 Docker-format archive、registry manifest、`image-reference.txt` 和
+   SHA-256 校验和；
 5. 在 `image-reference.txt` 和 Release Notes 中记录不可变的 `image@sha256:...`。
 
 外部 Actions 固定到具体提交 SHA；构建同时生成 Software Bill of Materials（SBOM，软件

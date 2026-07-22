@@ -72,7 +72,9 @@ scope and remaining production boundaries.
 ## Alibaba Cloud ACS IaC
 
 See [docs/alibaba-acs-design.md](./docs/alibaba-acs-design.md) for the complete
-flow and [iac/alicloud-acs/README.md](./iac/alicloud-acs/README.md) for commands.
+flow, [the OpenClaw image adaptation guide](./docs/openclaw-image-alibaba-acs-adaptation.md)
+for derived-image changes, and [iac/alicloud-acs/README.md](./iac/alicloud-acs/README.md)
+for commands.
 
 The derived image is released by pushing a SemVer tag such as `v0.1.0`. The
 `Release OpenClaw image` workflow publishes
@@ -93,4 +95,5 @@ manifest, immutable image reference, and checksums.
 - [Cloud provider configuration](./docs/provider-config.md)
 - [Cloud Sandbox Provider onboarding guide](./docs/cloud-sandbox-provider-onboarding.md)
 - [Alibaba Cloud ACS Agent Sandbox design](./docs/alibaba-acs-design.md)
+- [OpenClaw image adaptation for Alibaba Cloud ACS](./docs/openclaw-image-alibaba-acs-adaptation.md)
 - [Current implementation summary](./docs/implementation-summary.md)
