@@ -1,5 +1,8 @@
 # 云 Provider 配置管理
 
+完整的接口分级、接入步骤、验收矩阵和阿里云 ACS 示例见
+[云厂商 Sandbox Provider 对接操作指南](./cloud-sandbox-provider-onboarding.md)。
+
 ## 目标
 
 OnyxClaw 使用一个 E2B 兼容实现对接多个后端厂商。厂商差异优先通过 Provider

@@ -12,3 +12,4 @@ config/providers.local.json
 *.log
 *.swp
 .DS_Store
+.claude/

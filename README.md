@@ -64,9 +64,10 @@ With the UI server running, execute the complete local acceptance flow with:
 npm run phase1:smoke
 ```
 
-Current acceptance status: automated tests plus real macOS
-Phase 0 and Phase 1 OpenClaw runs passing. Cloud E2B/Sandbox lifecycle work is
-tracked separately from local mode.
+Current acceptance status: 96 automated tests plus real macOS Phase 0/Phase 1
+and Alibaba Cloud ACS Sandbox/OpenClaw/Channel runs passing. See the
+[implementation summary](./docs/implementation-summary.md) for the completed
+scope and remaining production boundaries.
 
 ## Alibaba Cloud ACS IaC
 
@@ -79,13 +80,17 @@ The derived image is released by pushing a SemVer tag such as `v0.1.0`. The
 the corresponding GitHub Release. Configure ACS with the `image@sha256:...`
 value from that Release, not with a floating tag.
 
-Current published version: [v0.1.0](https://github.com/MahaoAlex/onyxclaw/releases/tag/v0.1.0).
-Its GHCR manifest has been verified through an anonymous request, and the
-Alibaba Cloud plan succeeds with the Release digest reference.
+Current phase baselines are the OpenClaw Sandbox image
+[v0.1.3](https://github.com/MahaoAlex/onyxclaw/releases/tag/v0.1.3) and the cloud
+APP image [app-v0.3.6](https://github.com/MahaoAlex/onyxclaw/releases/tag/app-v0.3.6).
+The APP Release also contains a Docker-loadable `linux/amd64` tar.gz archive,
+manifest, immutable image reference, and checksums.
 
 ## Design
 
 - [Initial requirements](./docs/init.md)
 - [Cloud validation proposal](./docs/proposal.md)
 - [Cloud provider configuration](./docs/provider-config.md)
+- [Cloud Sandbox Provider onboarding guide](./docs/cloud-sandbox-provider-onboarding.md)
 - [Alibaba Cloud ACS Agent Sandbox design](./docs/alibaba-acs-design.md)
+- [Current implementation summary](./docs/implementation-summary.md)
