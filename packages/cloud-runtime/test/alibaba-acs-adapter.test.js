@@ -23,13 +23,14 @@ function provider() {
   };
 }
 
-function fixture({ createError } = {}) {
+function fixture({ createError, commandError } = {}) {
   const calls = [];
   const files = new Map();
   const session = {
     sandboxId: "default--onyxclaw-test",
     async runCommand(command, options) {
       calls.push(["command", command, options]);
+      if (commandError) throw commandError;
       return { exitCode: 0, stdout: "ok", stderr: "" };
     },
     async writeFile(path, content, options) {
@@ -199,6 +200,29 @@ test("records real E2B SDK timings and backend objects without commands or file 
   assert.equal(snapshot.calls[0].object.state, "terminated");
   assert.equal(snapshot.calls[1].object.state, "exited:0");
   assert.doesNotMatch(JSON.stringify(snapshot), /private command|private file content|runtime-secret/);
+});
+
+test("failed command telemetry includes the executed command with secrets redacted", async () => {
+  const operationMonitor = createSandboxServiceMonitor({ now: () => 100 });
+  const { clientFactory } = fixture({ commandError: new Error("command failed") });
+  const adapter = new AlibabaAcsAdapter({
+    provider: provider(),
+    secrets: { apiKey: "runtime-secret" },
+    clientFactory,
+    operationMonitor,
+  });
+  const { sandboxId } = await adapter.createSandbox();
+  await assert.rejects(
+    adapter.runCommand(sandboxId, "curl -H 'Authorization: runtime-secret' --token hidden-value /readyz"),
+    CloudRuntimeError,
+  );
+
+  const failed = operationMonitor.snapshot().calls[0];
+  assert.equal(failed.state, "failed");
+  assert.equal(failed.failureContext.label, "COMMAND");
+  assert.match(failed.failureContext.value, /curl -H/);
+  assert.match(failed.failureContext.value, /--token \[REDACTED\]/);
+  assert.doesNotMatch(JSON.stringify(failed), /runtime-secret|hidden-value/);
 });
 
 test("builds the adapter from the shared provider registry", async () => {

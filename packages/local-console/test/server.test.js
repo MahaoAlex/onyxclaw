@@ -314,7 +314,9 @@ test("web UI exposes a single reset button, parallel observability cards, and 5-
   assert.match(styles, /\.api-name b\s*\{[^}]*font:\s*750 12px/);
   assert.match(styles, /\.api-duration\s*\{[^}]*font:\s*750 11px/);
   assert.match(styles, /\.api-row\.failed\s*\{/);
+  assert.match(styles, /\.api-failure-detail\s*\{/);
   assert.match(browserApp, /summarizeCalls\(calls\)/);
+  assert.match(browserApp, /call\.failureContext\?\.value/);
   assert.doesNotMatch(styles, /@media\s*\(max-width:\s*860px\)/);
   assert.match(styles, /@media\s*\(max-width:\s*1180px\)/);
   assert.match(styles, /@media\s*\(max-width:\s*680px\)/);

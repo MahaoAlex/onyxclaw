@@ -57,6 +57,7 @@ test("monitor updates Sandbox object lifecycle and retains bounded history", () 
     target: "Sandbox envd",
     object: { type: "Process", id: "sandbox-1", state: "running" },
     command: "secret command",
+    failureContext: { label: "COMMAND", value: "node --check app.js" },
   });
   now += 20;
   monitor.fail(command, {
@@ -75,8 +76,24 @@ test("monitor updates Sandbox object lifecycle and retains bounded history", () 
   const snapshot = monitor.snapshot();
   assert.deepEqual(snapshot.calls.map((call) => call.api), ["Sandbox.kill", "Commands.run"]);
   assert.equal(snapshot.calls[1].state, "failed");
+  assert.deepEqual(snapshot.calls[1].failureContext, {
+    label: "COMMAND",
+    value: "node --check app.js",
+  });
   assert.equal(snapshot.objects.find((object) => object.type === "Sandbox").state, "terminated");
   assert.doesNotMatch(JSON.stringify(snapshot), /secret command/);
+});
+
+test("monitor exposes failure context only after an operation fails", () => {
+  const monitor = createSandboxServiceMonitor({ now: () => 0 });
+  const callId = monitor.begin({
+    api: "Commands.run",
+    target: "Sandbox envd",
+    failureContext: { label: "COMMAND", value: "pwd" },
+  });
+  assert.equal("failureContext" in monitor.snapshot().calls[0], false);
+  monitor.succeed(callId);
+  assert.equal("failureContext" in monitor.snapshot().calls[0], false);
 });
 
 test("reset clears the live activity, history, and tracked objects for a new tenant", () => {

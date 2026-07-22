@@ -15,6 +15,13 @@ function redact(message, secrets) {
   return safe;
 }
 
+function safeCommandSummary(command, secrets) {
+  return redact(command, secrets)
+    .replace(/((?:api[_-]?key|access[_-]?token|auth[_-]?token|bootstrap[_-]?token|password|secret)\s*[=:]\s*)([^\s;&|]+)/gi, "$1[REDACTED]")
+    .replace(/(--(?:api-key|token|password|secret)(?:=|\s+))([^\s;&|]+)/gi, "$1[REDACTED]")
+    .slice(0, 2_000);
+}
+
 export class CloudRuntimeError extends Error {
   constructor(stage, error, secrets) {
     const detail = redact(error instanceof Error ? error.message : error, secrets);
@@ -56,6 +63,7 @@ export class AlibabaAcsAdapter {
       api: telemetry.api,
       target: telemetry.target,
       object: telemetry.object,
+      failureContext: telemetry.failureContext,
     });
     try {
       const result = await operation();
@@ -126,6 +134,10 @@ export class AlibabaAcsAdapter {
     return this.#perform("command", {
       api: "Commands.run",
       target: "Sandbox envd",
+      failureContext: {
+        label: "COMMAND",
+        value: safeCommandSummary(command, this.#secrets),
+      },
       object: { type: "Process", id, state: "running" },
       resultObject: (result) => ({
         type: "Process",

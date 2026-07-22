@@ -245,6 +245,17 @@ function renderCalls(calls) {
     duration.className = "api-duration";
     duration.textContent = formatDuration(call.durationMs);
     row.append(name, target, state, duration);
+    if (call.state === "failed" && call.failureContext?.value) {
+      const detail = document.createElement("div");
+      detail.className = "api-failure-detail";
+      const label = document.createElement("strong");
+      label.textContent = call.failureContext.label || "DETAIL";
+      const value = document.createElement("code");
+      value.textContent = call.failureContext.value;
+      value.title = call.failureContext.value;
+      detail.append(label, value);
+      row.append(detail);
+    }
     elements.apiCallList.append(row);
   }
   elements.callsCount.textContent = String(calls.length);
