@@ -297,6 +297,7 @@ test("web UI exposes a single reset button, parallel observability cards, and 5-
   assert.doesNotMatch(styles, /body\s*\{[^}]*overflow:\s*hidden/);
   assert.match(styles, /\.workbench\s*\{[\s\S]*?height:\s*calc\(100dvh - 84px\)/);
   assert.match(styles, /\.workbench\s*\{[\s\S]*?grid-template-columns:\s*minmax\(340px,\s*min\(420px,\s*30vw\)\)\s+minmax\(0,\s*1fr\)/);
+  assert.match(styles, /\.customer-stage\s*\{[^}]*min-height:\s*0/);
   assert.match(styles, /\.phone-frame\s*\{[\s\S]*?aspect-ratio:\s*430\s*\/\s*780/);
   assert.match(styles, /\.phone-frame\s*\{[^}]*max-width:\s*100%/);
   // service-workbench is a 2-row layout; top row is the parallel architecture + objects

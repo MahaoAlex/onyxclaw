@@ -43,7 +43,7 @@ button { color: inherit; }
 .environment-chip i, .live-badge i { width: 6px; height: 6px; border-radius: 50%; background: var(--mint); box-shadow: 0 0 10px var(--mint); animation: breathe 1.8s ease-in-out infinite; }
 
 .workbench { height: calc(100dvh - 84px); display: grid; grid-template-columns: minmax(340px, min(420px, 30vw)) minmax(0, 1fr); gap: 24px; align-items: stretch; }
-.customer-stage { height: 100%; min-width: 0; display: grid; grid-template-rows: 43px minmax(0, 1fr); }
+.customer-stage { height: 100%; min-width: 0; min-height: 0; display: grid; grid-template-rows: 43px minmax(0, 1fr); }
 .section-label { height: 36px; display: flex; align-items: center; gap: 11px; margin: 0 0 13px 4px; }
 .section-label > span { color: var(--mint); font: 700 10px ui-monospace, monospace; }
 .section-label b { display: block; font: 750 10px ui-monospace, monospace; letter-spacing: .16em; }
