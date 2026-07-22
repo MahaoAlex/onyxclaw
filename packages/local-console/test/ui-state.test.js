@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { resolveLandingView } from "../public/ui-state.js";
+import { resolveLandingView, resolveTabState } from "../public/ui-state.js";
 
 test("a browser refresh always lands on lobster mode without resetting server progress", () => {
   assert.deepEqual(
@@ -30,5 +30,27 @@ test("cloud allocation advances to personality", () => {
       status: { mode: "allocated", currentStep: "soul", soulConfirmed: false },
     }),
     { visibleStep: "soul" },
+  );
+});
+
+test("confirmed users can switch between lobster mode and chat after refresh", () => {
+  assert.deepEqual(
+    resolveTabState({ mode: "connected", currentStep: "chat", soulConfirmed: true }),
+    {
+      mode: { enabled: true, hidden: false },
+      soul: { enabled: false, hidden: true },
+      chat: { enabled: true, hidden: false },
+    },
+  );
+});
+
+test("personality remains the only forward step before confirmation", () => {
+  assert.deepEqual(
+    resolveTabState({ mode: "allocated", currentStep: "soul", soulConfirmed: false }),
+    {
+      mode: { enabled: true, hidden: false },
+      soul: { enabled: true, hidden: false },
+      chat: { enabled: false, hidden: false },
+    },
   );
 });

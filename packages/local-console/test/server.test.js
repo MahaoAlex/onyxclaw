@@ -273,6 +273,7 @@ test("web UI exposes a single reset button, parallel observability cards, and 5-
   assert.match(html, /id="reset-user"/);
   assert.match(html, /确认性格并继续/);
   assert.match(html, /data-step="soul"/);
+  assert.doesNotMatch(html, /class="tab[^>]*>\s*<b>\d+<\/b>/);
   assert.match(html, /class="phone-frame"/);
   assert.match(html, /SYSTEM ARCHITECTURE/);
   assert.match(html, /API OBJECTS/);
@@ -314,6 +315,9 @@ test("web UI exposes a single reset button, parallel observability cards, and 5-
   assert.match(styles, /@media\s*\(max-width:\s*680px\)/);
   assert.doesNotMatch(styles, /phone-hardware\s*\{[^}]*display:\s*none/);
   assert.match(styles, /\.composer textarea\s*\{[\s\S]*?caret-color:\s*var\(--coral-dark\)/);
+  assert.match(styles, /\.composer\s*\{[^}]*flex:\s*0 0 auto/);
+  assert.match(styles, /\.messages\s*\{[^}]*flex:\s*1 1 0/);
+  assert.match(styles, /\.chat-panel\s*\{[^}]*overflow:\s*hidden/);
   assert.match(browserApp, /history\.scrollRestoration\s*=\s*"manual"/);
   assert.match(browserApp, /window\.scrollTo\(0,\s*0\)/);
   // UI no longer probes Sandbox ID / instance ID or metric states
@@ -325,4 +329,6 @@ test("web UI exposes a single reset button, parallel observability cards, and 5-
   assert.match(browserApp, /async function disconnectAndReset/);
   assert.match(browserApp, /async function enterLobsterMode/);
   assert.match(browserApp, /clearApiCallsUi/);
+  assert.match(browserApp, /resolveTabState/);
+  assert.match(browserApp, /document\.querySelectorAll\("\.tab"\)/);
 });

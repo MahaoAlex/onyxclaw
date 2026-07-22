@@ -1,4 +1,4 @@
-import { resolveLandingView } from "./ui-state.js";
+import { resolveLandingView, resolveTabState } from "./ui-state.js";
 import { architectureStateFor, formatDuration } from "./observability-ui.js";
 import { calculateViewportFit } from "./viewport-fit.js";
 import { runtimePresentation } from "./runtime-ui.js";
@@ -143,6 +143,13 @@ function renderStatus(status) {
   elements.chatInput.disabled = !chatReady;
   elements.send.disabled = !chatReady;
   elements.chatState.textContent = chatReady ? "已连接 · 可以发送" : "等待完成设置";
+  const tabState = resolveTabState(status);
+  document.querySelector(".tabs")?.classList.toggle("personality-confirmed", Boolean(status.soulConfirmed));
+  document.querySelectorAll(".tab").forEach((tab) => {
+    const state = tabState[tab.dataset.step];
+    tab.disabled = !state?.enabled;
+    tab.hidden = Boolean(state?.hidden);
+  });
   showStep(landing.visibleStep, status);
   if (status.error) notice(elements.modeNotice, status.error, true);
 }
@@ -285,10 +292,9 @@ function showStep(step, status = {}) {
     item.classList.toggle("active", item.dataset.step === step);
     item.classList.toggle("complete", order[item.dataset.step] < order[step]);
   });
-  const soulTab = document.querySelector('[data-step="soul"]');
-  soulTab.hidden = Boolean(status.soulConfirmed);
   if (step === "soul") void loadSoul();
   if (step === "chat" && status.soulConfirmed) void ensureHello();
+  scheduleViewportFit();
 }
 
 async function refreshStatus() {
@@ -328,6 +334,7 @@ function addMessage(role, text, metadata) {
   message.append(bubble, meta);
   elements.messages.append(message);
   elements.messages.scrollTop = elements.messages.scrollHeight;
+  scheduleViewportFit();
 }
 
 function resetChatView() {
@@ -440,6 +447,17 @@ elements.resetUser.addEventListener("click", async () => {
 elements.enterLobsterMode.addEventListener("click", async () => {
   if (elements.enterLobsterMode.disabled) return;
   await enterLobsterMode();
+});
+
+document.querySelectorAll(".tab").forEach((tab) => {
+  tab.addEventListener("click", async () => {
+    if (tab.disabled) return;
+    const status = await api("/api/status");
+    const state = resolveTabState(status)[tab.dataset.step];
+    if (!state?.enabled) return;
+    initialLanding = false;
+    showStep(tab.dataset.step, status);
+  });
 });
 
 elements.reloadSoul.addEventListener("click", loadSoul);
