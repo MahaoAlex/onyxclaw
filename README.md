@@ -96,4 +96,5 @@ manifest, immutable image reference, and checksums.
 - [Cloud Sandbox Provider onboarding guide](./docs/cloud-sandbox-provider-onboarding.md)
 - [Alibaba Cloud ACS Agent Sandbox design](./docs/alibaba-acs-design.md)
 - [OpenClaw image adaptation for Alibaba Cloud ACS](./docs/openclaw-image-alibaba-acs-adaptation.md)
+- [Alibaba Cloud ACS OpenClaw bootstrap config](./docs/alibaba-acs-bootstrap-config.md)
 - [Current implementation summary](./docs/implementation-summary.md)

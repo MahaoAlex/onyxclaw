@@ -1,5 +1,12 @@
 # Deploy the cloud APP to Alibaba ACS
 
+OpenClaw 基础配置和 Sandbox `bootstrap_config` 的生成链路见
+[阿里云 ACS OpenClaw bootstrap_config 说明](../../docs/alibaba-acs-bootstrap-config.md)。
+可复制的基础配置位于
+[`examples/openclaw-base-config.example.json`](./examples/openclaw-base-config.example.json)，
+运行时成品结构示例位于
+[`examples/bootstrap-config.example.json`](./examples/bootstrap-config.example.json)。
+
 镜像包含 Node BFF/UI 和阿里云支持版本的 Python E2B SDK。部署前创建 Secret；不要把真实值
 写入 YAML 或 Git：
 

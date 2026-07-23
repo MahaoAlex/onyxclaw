@@ -4,6 +4,9 @@
 OpenClaw 镜像增加了哪些内容、各项改动解决什么问题，以及镜像外部还需要哪些部署
 配置配合。
 
+运行时配置的来源和完整样例见
+[阿里云 ACS OpenClaw bootstrap_config 说明](./alibaba-acs-bootstrap-config.md)。
+
 ## 1. 结论
 
 本项目没有 fork 或修改 OpenClaw 核心源码，而是基于固定版本的官方镜像构建派生镜像：

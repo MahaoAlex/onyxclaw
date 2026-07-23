@@ -35,6 +35,32 @@ test("ACS manifest keeps secrets external and exposes UI plus Channel ports", as
   assert.doesNotMatch(manifest, /runtime-secret|model-secret/);
 });
 
+test("ACS bootstrap config examples separate deployment input from runtime output", async () => {
+  const base = JSON.parse(await read(
+    "deploy/alicloud-app/examples/openclaw-base-config.example.json",
+  ));
+  const bootstrap = JSON.parse(await read(
+    "deploy/alicloud-app/examples/bootstrap-config.example.json",
+  ));
+
+  assert.equal(
+    base.models.providers["acs-model"].apiKey,
+    "__ONYXCLAW_MODEL_API_KEY__",
+  );
+  assert.deepEqual(base.plugins.load.paths, []);
+  assert.deepEqual(base.channels, {});
+  assert.equal(
+    bootstrap.models.providers["acs-model"].apiKey,
+    "example-model-api-key-injected-at-runtime",
+  );
+  assert.ok(bootstrap.plugins.load.paths.includes("/opt/onyxclaw/channel"));
+  assert.equal(bootstrap.plugins.entries.onyxclaw.enabled, true);
+  assert.equal(bootstrap.channels.onyxclaw.enabled, true);
+  assert.match(bootstrap.channels.onyxclaw.platformUrl, /^ws:\/\//);
+  assert.match(bootstrap.channels.onyxclaw.instanceId, /^example-/);
+  assert.match(bootstrap.channels.onyxclaw.bootstrapToken, /^example-/);
+});
+
 test("APP release tags publish a dedicated immutable container", async () => {
   const workflow = await read(".github/workflows/release-cloud-app.yml");
   assert.match(workflow, /app-v\*/);
